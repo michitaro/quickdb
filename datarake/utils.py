@@ -6,7 +6,7 @@ import textwrap
 
 def hash(value):
     m = hashlib.sha512()
-    m.update(value + password)
+    m.update(value + keychain.password)
     return bytes(m.hexdigest(), 'utf-8')
 
 
@@ -34,8 +34,15 @@ def load_file(fname):
     return mod
 
 
-password_path = f'{os.path.dirname(__file__)}/secrets/password'
-assert os.stat(password_path).st_mode & 0o077 == 0
-with open(password_path) as f:
-    password = bytes(f.read().strip(), 'utf-8')
-    assert len(password) >= 256
+class Keychain:
+    @property
+    @functools.lru_cache(None)
+    def password(self):
+        password_path = f'{os.path.dirname(__file__)}/secrets/password'
+        assert os.stat(password_path).st_mode & 0o077 == 0
+        with open(password_path) as f:
+            password = bytes(f.read().strip(), 'utf-8')
+            assert len(password) >= 256
+        return password
+
+keychain = Keychain()
