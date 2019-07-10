@@ -176,3 +176,11 @@ The following instructions should be done on your laptop.
     ```bash
     jupyter lab ./sample.ipynb
     ```
+
+### Building Sphinx Docs
+```
+make
+open sphix/_build/html/index.html
+```
+
+* [Google style comments](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/) are supported.
