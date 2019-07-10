@@ -1,4 +1,4 @@
 .PHONY: docs
 
 docs:
-	make -C docs html
+	make -C sphinx html

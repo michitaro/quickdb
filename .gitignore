@@ -1,4 +1,9 @@
 __pycache__
 *.pyc
 .ipynb_checkpoints
-/docs/_build
+/datarake/config.py
+/webif/config.py
+/sphinx/_build
+/.vscode
+/docs
+/Pipfile.lock

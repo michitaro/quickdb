@@ -43,6 +43,7 @@ The following instructions shoud be done on the master node.
     * System configuration is kept in `config.py`.
     * Change `config.master_addr` and `config.workers[*].host` according to your environment.
     ```bash
+    $ cp datarake/config.py.sample datarake/config.py
     $ vi datarake/config.py
     ```
     * `config.py` will be transferred to the worker node later.
@@ -166,6 +167,7 @@ The following instructions should be done on your laptop.
 
 1. Setting of connection destination
     ```bash
+    cp webif/config.py.sample webif/config.py
     vi webif/config.py
     # change server address for master node
     ```
