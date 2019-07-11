@@ -69,9 +69,10 @@ def batch(iterable, size):
     sourceiter = iter(iterable)
     while True:
         batchiter = islice(sourceiter, size)
-        yield list(chain([next(batchiter)], batchiter))
-
-
+        try:
+            yield list(chain([next(batchiter)], batchiter))
+        except StopIteration:
+            return
 
 if __name__ == '__main__':
     main()
