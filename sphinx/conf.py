@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath(
 # -- Project information -----------------------------------------------------
 
 project = 'quickdb'
-copyright = '2019, Author'
-author = 'Author'
+copyright = '2019, NAOJ & IUCAA'
+author = 'quickdb team'
 
 
 # -- General configuration ---------------------------------------------------
