@@ -12,6 +12,8 @@ With this system, users can give mapper and reducer
 in Python code directly to the system to process data.
 It also has an interface of SQL.
 
+Codes are available at `GitHub <https://github.com/michitaro/quickdb/>`_.
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents:

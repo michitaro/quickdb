@@ -179,8 +179,13 @@ The following instructions should be done on your laptop.
 
 ### Building Sphinx Docs
 ```
-make
+make docs
 open sphix/_build/html/index.html
 ```
 
 * [Google style comments](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/) are supported.
+* Compiled docs are available [here](https://michitaro.github.io/quickdb/).
+* Push your local sphinx-docs to gh-pages:
+    ```bash
+    make gh-pages
+    ```
