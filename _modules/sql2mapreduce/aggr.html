@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sql2mapreduce.aggr &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sql2mapreduce.aggr</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">sqlast</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">config</span>
+
+
+<span class="kn">from</span> <span class="nn">.nonaggr</span> <span class="k">import</span> <span class="n">target_names</span>
+
+
+<div class="viewcode-block" id="sql2make_envs"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.sql2make_envs">[docs]</a><span class="k">def</span> <span class="nf">sql2make_envs</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">print_ast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">stmt</span> <span class="o">=</span> <span class="n">safe_stmt</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">print_ast</span><span class="p">:</span>
+        <span class="n">sqlast</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+    <span class="n">check_ast_args</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+    <span class="n">wrap_series_ast</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+    <span class="n">aggr_calls</span> <span class="o">=</span> <span class="n">pick_aggr_calls</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+    <span class="n">make_envs</span> <span class="o">=</span> <span class="p">[</span><span class="n">aggr_call_to_make_env</span><span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="n">stmt</span><span class="p">)</span> <span class="k">for</span> <span class="n">ac</span> <span class="ow">in</span> <span class="n">aggr_calls</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">make_envs</span><span class="p">,</span> <span class="n">stmt</span><span class="p">,</span> <span class="n">target_names</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="safe_stmt"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.safe_stmt">[docs]</a><span class="k">def</span> <span class="nf">safe_stmt</span><span class="p">(</span><span class="n">sql</span><span class="p">):</span>
+    <span class="n">stmts</span> <span class="o">=</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">parse_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="n">sqlast</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stmts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Too many statements&#39;</span><span class="p">)</span>
+    <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stmt</span>
+    <span class="n">sqlast</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">SelectStmt</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;Not supported statement: </span><span class="si">{stmt.__class__.__name__}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">safe_attrs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="s1">&#39;targetList fromClause whereClause groupClause op&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">aa</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">aa</span> <span class="ow">in</span> <span class="n">stmt</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">-</span> <span class="n">safe_attrs</span><span class="p">:</span>
+        <span class="n">sqlast</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{a}</span><span class="s1"> is not supported in aggregation query&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">stmt</span></div>
+
+
+<div class="viewcode-block" id="check_ast_args"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.check_ast_args">[docs]</a><span class="k">def</span> <span class="nf">check_ast_args</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">aggregators</span><span class="o">.</span><span class="n">mapping</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">FuncCall</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ast</span><span class="o">.</span><span class="n">name_tuple</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+            <span class="n">Aggregator</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">ast</span><span class="o">.</span><span class="n">name_tuple</span><span class="p">]</span>
+            <span class="n">Aggregator</span><span class="o">.</span><span class="n">check_ast_args</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+    <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_aggr_call"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.is_aggr_call">[docs]</a><span class="k">def</span> <span class="nf">is_aggr_call</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">FuncCall</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ast</span><span class="o">.</span><span class="n">name_tuple</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">aggregators</span><span class="o">.</span><span class="n">mapping</span></div>
+
+
+<div class="viewcode-block" id="wrap_series_ast"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.wrap_series_ast">[docs]</a><span class="k">def</span> <span class="nf">wrap_series_ast</span><span class="p">(</span><span class="n">stmt</span><span class="p">):</span>
+    <span class="n">series_ast</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">break_if</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">is_aggr_call</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">is_series_ast</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+            <span class="n">series_ast</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+    <span class="n">stmt</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">break_if</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">Ast</span><span class="p">)</span> <span class="ow">and</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">series_ast</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">aggregators</span><span class="o">.</span><span class="n">PickOneAggregator</span><span class="o">.</span><span class="n">build_call_ast</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="n">walk_and_replace_node</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">stmt</span><span class="o">.</span><span class="n">targetList</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pick_aggr_calls"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.pick_aggr_calls">[docs]</a><span class="k">def</span> <span class="nf">pick_aggr_calls</span><span class="p">(</span><span class="n">stmt</span><span class="p">):</span>
+    <span class="n">aggr_calls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_aggr_call</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+            <span class="c1"># ast doesn&#39;t contain child aggregate funccalls because we walks leaf first.</span>
+            <span class="n">Aggregator</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">aggregators</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">ast</span><span class="o">.</span><span class="n">name_tuple</span><span class="p">]</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">AggregateResultAst</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">aggr_calls</span><span class="p">),</span> <span class="n">Aggregator</span><span class="p">,</span> <span class="n">ast</span><span class="p">)</span>
+            <span class="n">aggr_calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ref</span>
+    <span class="n">walk_and_replace_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">stmt</span><span class="o">.</span><span class="n">targetList</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">aggr_calls</span></div>
+
+
+<div class="viewcode-block" id="walk_and_replace_node"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.walk_and_replace_node">[docs]</a><span class="k">def</span> <span class="nf">walk_and_replace_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="n">walk_and_replace_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="c1"># list elements are always asts</span>
+            <span class="n">newval</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">newval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">node</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">newval</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">Ast</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">attr</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">primitive</span><span class="p">:</span>
+                    <span class="n">walk_and_replace_node</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                    <span class="n">newval</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">newval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">attr</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">newval</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AggregateResultAst"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.AggregateResultAst">[docs]</a><span class="k">class</span> <span class="nc">AggregateResultAst</span><span class="p">(</span><span class="n">sqlast</span><span class="o">.</span><span class="n">Ast</span><span class="p">):</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">Aggregator</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Aggregator</span> <span class="o">=</span> <span class="n">Aggregator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ast</span> <span class="o">=</span> <span class="n">ast</span></div>
+
+
+<span class="kn">from</span> <span class="nn">.nonaggr</span> <span class="k">import</span> <span class="n">where_clause_pycode</span>
+
+
+<div class="viewcode-block" id="aggr_call_to_make_env"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.aggr_call_to_make_env">[docs]</a><span class="k">def</span> <span class="nf">aggr_call_to_make_env</span><span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="n">stmt</span><span class="p">):</span>
+    <span class="n">pcb</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">PycodeBuilder</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+
+    <span class="n">pycode</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        {config.preamble(stmt)}</span>
+<span class="s1">        from sql2mapreduce.aggr import make_mapper, make_reducer</span>
+<span class="s1">        from sql2mapreduce.config import funcs</span>
+<span class="s1">        from sql2mapreduce.config import sqlfuncs</span>
+<span class="s1">        from sql2mapreduce.config import aggregators</span>
+<span class="s1">        import numpy</span>
+
+<span class="s1">        def WHERE(t): return { where_clause_pycode(pcb) }</span>
+<span class="s1">        def GROUP_BY(t): return { group_clause_pycode(pcb) }</span>
+<span class="s1">        def CALL_MAP(a, t): return a.map({ ac.Aggregator.call_map_args_pycode(ac.ast, pcb) })</span>
+
+<span class="s1">        mapper = make_mapper(aggregators.{ ac.Aggregator.__name__ }, CALL_MAP, WHERE, GROUP_BY)</span>
+<span class="s1">        reducer = make_reducer()</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pycode</span></div>
+
+
+<div class="viewcode-block" id="group_clause_pycode"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.group_clause_pycode">[docs]</a><span class="k">def</span> <span class="nf">group_clause_pycode</span><span class="p">(</span><span class="n">pcb</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pcb</span><span class="o">.</span><span class="n">stmt</span><span class="o">.</span><span class="n">groupClause</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pcb</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">pcb</span><span class="o">.</span><span class="n">stmt</span><span class="o">.</span><span class="n">groupClause</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span></div>
+
+
+<div class="viewcode-block" id="make_mapper"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.make_mapper">[docs]</a><span class="k">def</span> <span class="nf">make_mapper</span><span class="p">(</span><span class="n">Aggregator</span><span class="p">,</span> <span class="n">CALL_MAP</span><span class="p">,</span> <span class="n">WHERE</span><span class="p">,</span> <span class="n">GROUP_BY</span><span class="p">):</span>
+    <span class="c1"># mapper returns {[group_value]: aggregator}</span>
+    <span class="k">def</span> <span class="nf">mapper</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="n">WHERE</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">where</span><span class="p">]</span>
+
+        <span class="n">group_values</span> <span class="o">=</span> <span class="n">GROUP_BY</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">mapped_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">def</span> <span class="nf">run_mapper</span><span class="p">(</span><span class="n">gv</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">Aggregator</span><span class="p">(</span><span class="n">gv</span><span class="p">)</span>
+            <span class="n">CALL_MAP</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+            <span class="n">mapped_values</span><span class="p">[</span><span class="n">gv</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+
+        <span class="k">if</span> <span class="n">group_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gvs</span><span class="p">,</span> <span class="n">gi</span> <span class="o">=</span> <span class="n">multi_column_unique</span><span class="p">(</span><span class="n">group_values</span><span class="p">)</span>
+            <span class="c1"># gvs: list of group values</span>
+            <span class="c1"># gi: group index</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">gv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gvs</span><span class="p">):</span>
+                <span class="n">run_mapper</span><span class="p">(</span><span class="n">gv</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">gi</span> <span class="o">==</span> <span class="n">i</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">run_mapper</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mapped_values</span>
+    <span class="k">return</span> <span class="n">mapper</span></div>
+
+
+<div class="viewcode-block" id="make_reducer"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.make_reducer">[docs]</a><span class="k">def</span> <span class="nf">make_reducer</span><span class="p">():</span>
+    <span class="c1"># acc, val: {[group_value]: aggregator}</span>
+    <span class="k">def</span> <span class="nf">reducer</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">acc</span><span class="p">:</span>
+                <span class="n">acc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">acc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">return</span> <span class="n">acc</span>
+    <span class="k">return</span> <span class="n">reducer</span></div>
+
+
+<div class="viewcode-block" id="multi_column_unique"><a class="viewcode-back" href="../../sql2mapreduce.html#sql2mapreduce.aggr.multi_column_unique">[docs]</a><span class="k">def</span> <span class="nf">multi_column_unique</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># just for performance</span>
+        <span class="n">V</span><span class="p">,</span> <span class="n">I</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="p">[(</span><span class="n">v</span><span class="p">,)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">V</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arr</span><span class="p">]</span>
+        <span class="n">ii</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">u</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">vv</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">u</span><span class="p">]</span>
+        <span class="n">II</span><span class="p">,</span> <span class="n">I</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">vv</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">II</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">I</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    SELECT</span>
+<span class="s1">        -- crossmatch(ref.coord, shared.my_coord, 5 / arcsec, ref.id)</span>
+<span class="s1">        shared.a + count(*)</span>
+<span class="s1">    FROM</span>
+<span class="s1">        pdr1_wide</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+
+    <span class="n">make_envs</span><span class="p">,</span> <span class="n">stmt</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">sql2make_envs</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">make_env</span> <span class="ow">in</span> <span class="n">make_envs</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">make_env</span><span class="p">)</span>
+    <span class="n">sqlast</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

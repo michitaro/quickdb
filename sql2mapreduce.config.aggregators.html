@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sql2mapreduce.config.aggregators package &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="sspcatalog package" href="sspcatalog.html" />
+    <link rel="prev" title="sql2mapreduce.config package" href="sql2mapreduce.config.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sspcatalog.html" title="sspcatalog package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.config.html" title="sql2mapreduce.config package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="sql2mapreduce.html" >sql2mapreduce package</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="sql2mapreduce.config.html" accesskey="U">sql2mapreduce.config package</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">sql2mapreduce.config.aggregators package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.count">sql2mapreduce.config.aggregators.count module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.crossmatch">sql2mapreduce.config.aggregators.crossmatch module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.histogram">sql2mapreduce.config.aggregators.histogram module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.histogram2d">sql2mapreduce.config.aggregators.histogram2d module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.minmax">sql2mapreduce.config.aggregators.minmax module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators.pickone">sql2mapreduce.config.aggregators.pickone module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.aggregators">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sql2mapreduce.config.html"
+                        title="previous chapter">sql2mapreduce.config package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sspcatalog.html"
+                        title="next chapter">sspcatalog package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sql2mapreduce.config.aggregators.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="sql2mapreduce-config-aggregators-package">
+<h1>sql2mapreduce.config.aggregators package<a class="headerlink" href="#sql2mapreduce-config-aggregators-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.count">
+<span id="sql2mapreduce-config-aggregators-count-module"></span><h2>sql2mapreduce.config.aggregators.count module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.count" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.count.</code><code class="sig-name descname">CountAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator.check_ast_args">
+<em class="property">classmethod </em><code class="sig-name descname">check_ast_args</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator.check_ast_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator.check_ast_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.count.CountAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/count.html#CountAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.count.CountAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.crossmatch">
+<span id="sql2mapreduce-config-aggregators-crossmatch-module"></span><h2>sql2mapreduce.config.aggregators.crossmatch module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.crossmatch" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.crossmatch.</code><code class="sig-name descname">CrossmatchAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.check_ast_args">
+<em class="property">classmethod </em><code class="sig-name descname">check_ast_args</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.check_ast_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.check_ast_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.make_tree">
+<em class="property">static </em><code class="sig-name descname">make_tree</code><span class="sig-paren">(</span><em class="sig-param">coord</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.make_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.make_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">cat1</em>, <em class="sig-param">cat2</em>, <em class="sig-param">radius</em>, <em class="sig-param">*select</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/crossmatch.html#CrossmatchAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.crossmatch.CrossmatchAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.histogram">
+<span id="sql2mapreduce-config-aggregators-histogram-module"></span><h2>sql2mapreduce.config.aggregators.histogram module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.histogram" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.histogram.</code><code class="sig-name descname">HistogramAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram.html#HistogramAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram.html#HistogramAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">vals</em>, <em class="sig-param">histrange</em>, <em class="sig-param">bins=50</em>, <em class="sig-param">weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram.html#HistogramAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.n_args">
+<code class="sig-name descname">n_args</code><em class="property"> = 1</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.n_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram.html#HistogramAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.required_args">
+<code class="sig-name descname">required_args</code><em class="property"> = ['range']</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.required_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram.HistogramAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram.html#HistogramAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram.HistogramAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.histogram2d">
+<span id="sql2mapreduce-config-aggregators-histogram2d-module"></span><h2>sql2mapreduce.config.aggregators.histogram2d module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.histogram2d" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.histogram2d.</code><code class="sig-name descname">Histogram2dAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram2d.html#Histogram2dAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram2d.html#Histogram2dAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">xvals</em>, <em class="sig-param">yvals</em>, <em class="sig-param">histrange</em>, <em class="sig-param">bins=(50</em>, <em class="sig-param">50)</em>, <em class="sig-param">weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram2d.html#Histogram2dAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.n_args">
+<code class="sig-name descname">n_args</code><em class="property"> = 2</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.n_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram2d.html#Histogram2dAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.required_args">
+<code class="sig-name descname">required_args</code><em class="property"> = ['range']</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.required_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/histogram2d.html#Histogram2dAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.histogram2d.Histogram2dAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.minmax">
+<span id="sql2mapreduce-config-aggregators-minmax-module"></span><h2>sql2mapreduce.config.aggregators.minmax module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.minmax" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.minmax.</code><code class="sig-name descname">MinMaxAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/minmax.html#MinMaxAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/minmax.html#MinMaxAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">vals</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/minmax.html#MinMaxAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.n_args">
+<code class="sig-name descname">n_args</code><em class="property"> = 1</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.n_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/minmax.html#MinMaxAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/minmax.html#MinMaxAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.minmax.MinMaxAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators.pickone">
+<span id="sql2mapreduce-config-aggregators-pickone-module"></span><h2>sql2mapreduce.config.aggregators.pickone module<a class="headerlink" href="#module-sql2mapreduce.config.aggregators.pickone" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.aggregators.pickone.</code><code class="sig-name descname">PickOneAggregator</code><span class="sig-paren">(</span><em class="sig-param">group_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/pickone.html#PickOneAggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.aggregator.Aggregator" title="sql2mapreduce.aggregator.Aggregator"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.aggregator.Aggregator</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator.call_map_args_pycode">
+<em class="property">classmethod </em><code class="sig-name descname">call_map_args_pycode</code><span class="sig-paren">(</span><em class="sig-param">fc</em>, <em class="sig-param">pcb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/pickone.html#PickOneAggregator.call_map_args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator.call_map_args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">vals</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/pickone.html#PickOneAggregator.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator.n_args">
+<code class="sig-name descname">n_args</code><em class="property"> = 1</em><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator.n_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/pickone.html#PickOneAggregator.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.aggregators.pickone.PickOneAggregator.result">
+<code class="sig-name descname">result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/aggregators/pickone.html#PickOneAggregator.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.aggregators.pickone.PickOneAggregator.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.aggregators">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-sql2mapreduce.config.aggregators" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sspcatalog.html" title="sspcatalog package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.config.html" title="sql2mapreduce.config package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="sql2mapreduce.html" >sql2mapreduce package</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="sql2mapreduce.config.html" >sql2mapreduce.config package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

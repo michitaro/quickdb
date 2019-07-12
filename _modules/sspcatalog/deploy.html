@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sspcatalog.deploy &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sspcatalog.deploy</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datarake</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">logging</span> <span class="p">;</span> <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.deploy.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rerun&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="s1">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">rerun</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">rerun</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">n_workers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
+
+    <span class="n">allPatches</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{args.data}</span><span class="s1">/patches/*&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">worker</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">workers</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39; ==== </span><span class="si">{worker.host}</span><span class="s1"> ====&#39;</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span>
+            <span class="s1">&#39;ssh&#39;</span><span class="p">,</span> <span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;mkdir -p </span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{args.rerun}</span><span class="s1">/patches&#39;</span><span class="p">,</span>
+        <span class="p">])</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">-</span> <span class="p">{</span><span class="s1">&#39;patches&#39;</span><span class="p">}:</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s1">&#39;rsync&#39;</span><span class="p">,</span> <span class="s1">&#39;--delete&#39;</span><span class="p">,</span> <span class="s1">&#39;-av&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{args.data}</span><span class="s1">/</span><span class="si">{f}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{worker.host}</span><span class="s1">:</span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{args.rerun}</span><span class="s1">/</span><span class="si">{f}</span><span class="s1">&#39;</span><span class="p">])</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">allPatches</span><span class="p">)</span> <span class="o">*</span> <span class="n">i</span> <span class="o">//</span> <span class="n">n_workers</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">allPatches</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_workers</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">allPatches</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">deploy</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">rerun</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span></div>
+
+
+
+<span class="n">files_to_deploy</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    *.pickle id.npy coord.npy flags-*.npy</span>
+<span class="s1">    cmodel_flux.npy cmodel_flux_err.npy flux_sinc.npy flux_sinc_err.npy</span>
+<span class="s1">    classification_extendedness.npy</span>
+<span class="s1">    shape_sdss*.npy</span>
+<span class="s1">    variance</span>
+<span class="s1">&#39;&#39;&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="deploy"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.deploy.deploy">[docs]</a><span class="k">def</span> <span class="nf">deploy</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">rerun</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">work_dir</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">remote_patches</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span>
+        <span class="s1">&#39;ssh&#39;</span><span class="p">,</span> <span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;ls </span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{rerun}</span><span class="s1">/patches&#39;</span><span class="p">,</span>
+    <span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">patches_to_delete</span> <span class="o">=</span> <span class="n">remote_patches</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">patches_to_delete</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span>
+            <span class="s1">&#39;ssh&#39;</span><span class="p">,</span> <span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{rerun}</span><span class="s1">/patches ; rm -r {&quot; &quot;.join(patches_to_delete)}&#39;</span><span class="p">,</span>
+        <span class="p">])</span>
+    <span class="n">batch_n</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch_files</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">batch</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">batch_n</span><span class="p">)):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;deploying </span><span class="si">{i}</span><span class="s1"> / {len(files) // batch_n}...&#39;</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;rsync&#39;</span><span class="p">,</span> <span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">([</span><span class="s1">&#39;-v&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">[]),</span> <span class="s1">&#39;--delete&#39;</span><span class="p">,</span> <span class="s1">&#39;--include&#39;</span><span class="p">,</span> <span class="s1">&#39;*/&#39;</span><span class="p">]</span> <span class="o">+</span> 
+            <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(((</span><span class="s1">&#39;--include&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">files_to_deploy</span><span class="p">)))</span> <span class="o">+</span>
+            <span class="p">[</span> <span class="s1">&#39;--exclude&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span> <span class="p">]</span> <span class="o">+</span>
+            <span class="n">batch_files</span> <span class="o">+</span> <span class="p">[</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{worker.host}</span><span class="s1">:</span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{rerun}</span><span class="s1">/patches&#39;</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="batch"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.deploy.batch">[docs]</a><span class="k">def</span> <span class="nf">batch</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns iterator for each slice of `size` elements.</span>
+<span class="sd">    </span>
+<span class="sd">    Example: ::</span>
+
+<span class="sd">        &gt;&gt;&gt; list(batch(range(10), 3))</span>
+<span class="sd">        [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]</span>
+
+<span class="sd">    See https://stackoverflow.com/a/8290514/2741327</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">islice</span><span class="p">,</span> <span class="n">chain</span>
+    <span class="n">sourceiter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">batchiter</span> <span class="o">=</span> <span class="n">islice</span><span class="p">(</span><span class="n">sourceiter</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">*</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">([</span><span class="nb">next</span><span class="p">(</span><span class="n">batchiter</span><span class="p">)],</span> <span class="n">batchiter</span><span class="p">))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

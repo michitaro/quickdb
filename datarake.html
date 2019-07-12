@@ -1,0 +1,351 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>datarake package &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="sql2mapreduce package" href="sql2mapreduce.html" />
+    <link rel="prev" title="Welcome to quickdb’s documentation!" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.html" title="sql2mapreduce package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to quickdb’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">datarake package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-datarake.batch">datarake.batch module</a></li>
+<li><a class="reference internal" href="#module-datarake.config">datarake.config module</a></li>
+<li><a class="reference internal" href="#module-datarake.master">datarake.master module</a></li>
+<li><a class="reference internal" href="#module-datarake.parallel">datarake.parallel module</a></li>
+<li><a class="reference internal" href="#module-datarake.timer">datarake.timer module</a></li>
+<li><a class="reference internal" href="#module-datarake.utils">datarake.utils module</a></li>
+<li><a class="reference internal" href="#module-datarake.worker">datarake.worker module</a></li>
+<li><a class="reference internal" href="#module-datarake.workerctrl">datarake.workerctrl module</a></li>
+<li><a class="reference internal" href="#module-datarake">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to quickdb’s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sql2mapreduce.html"
+                        title="next chapter">sql2mapreduce package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/datarake.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="datarake-package">
+<h1>datarake package<a class="headerlink" href="#datarake-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-datarake.batch">
+<span id="datarake-batch-module"></span><h2>datarake.batch module<a class="headerlink" href="#module-datarake.batch" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="datarake.batch.batch">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">batch</code><span class="sig-paren">(</span><em class="sig-param">*cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.batch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.batch.check_connection">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">check_connection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#check_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.check_connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.batch.main">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.batch.show_result">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">show_result</code><span class="sig-paren">(</span><em class="sig-param">batch_result</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#show_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.show_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.batch.ssh">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">ssh</code><span class="sig-paren">(</span><em class="sig-param">cmd_function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#ssh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.ssh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.batch.update_code1">
+<code class="sig-prename descclassname">datarake.batch.</code><code class="sig-name descname">update_code1</code><span class="sig-paren">(</span><em class="sig-param">worker</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/batch.html#update_code1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.batch.update_code1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake.config">
+<span id="datarake-config-module"></span><h2>datarake.config module<a class="headerlink" href="#module-datarake.config" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="datarake.config.TaskCache">
+<em class="property">class </em><code class="sig-prename descclassname">datarake.config.</code><code class="sig-name descname">TaskCache</code><a class="reference internal" href="_modules/datarake/config.html#TaskCache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.config.TaskCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="datarake.config.Worker">
+<em class="property">class </em><code class="sig-prename descclassname">datarake.config.</code><code class="sig-name descname">Worker</code><span class="sig-paren">(</span><em class="sig-param">host</em>, <em class="sig-param">work_dir</em>, <em class="sig-param">python_path</em>, <em class="sig-param">port=2935</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/config.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.config.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-datarake.master">
+<span id="datarake-master-module"></span><h2>datarake.master module<a class="headerlink" href="#module-datarake.master" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="datarake.master.cat_n">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">cat_n</code><span class="sig-paren">(</span><em class="sig-param">text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#cat_n"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.cat_n" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.master.pack_args">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">pack_args</code><span class="sig-paren">(</span><em class="sig-param">f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#pack_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.pack_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.master.pick_result">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">pick_result</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#pick_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.pick_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.master.post_request">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">post_request</code><span class="sig-paren">(</span><em class="sig-param">worker</em>, <em class="sig-param">make_env</em>, <em class="sig-param">context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#post_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.post_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.master.run">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">make_env</em>, <em class="sig-param">context={}</em>, <em class="sig-param">time=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.master.scatter">
+<code class="sig-prename descclassname">datarake.master.</code><code class="sig-name descname">scatter</code><span class="sig-paren">(</span><em class="sig-param">make_env</em>, <em class="sig-param">context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/master.html#scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.master.scatter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake.parallel">
+<span id="datarake-parallel-module"></span><h2>datarake.parallel module<a class="headerlink" href="#module-datarake.parallel" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="datarake.parallel.map">
+<code class="sig-prename descclassname">datarake.parallel.</code><code class="sig-name descname">map</code><span class="sig-paren">(</span><em class="sig-param">f</em>, <em class="sig-param">items</em>, <em class="sig-param">nProcs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#datarake.parallel.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.parallel.parallelMap">
+<code class="sig-prename descclassname">datarake.parallel.</code><code class="sig-name descname">parallelMap</code><span class="sig-paren">(</span><em class="sig-param">f</em>, <em class="sig-param">items</em>, <em class="sig-param">nProcs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/parallel.html#parallelMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.parallel.parallelMap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.parallel.starmap">
+<code class="sig-prename descclassname">datarake.parallel.</code><code class="sig-name descname">starmap</code><span class="sig-paren">(</span><em class="sig-param">f</em>, <em class="sig-param">items</em>, <em class="sig-param">nProcs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/parallel.html#starmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.parallel.starmap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake.timer">
+<span id="datarake-timer-module"></span><h2>datarake.timer module<a class="headerlink" href="#module-datarake.timer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="datarake.timer.Timer">
+<em class="property">class </em><code class="sig-prename descclassname">datarake.timer.</code><code class="sig-name descname">Timer</code><a class="reference internal" href="_modules/datarake/timer.html#Timer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.timer.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="datarake.timer.Timer.asdict">
+<code class="sig-name descname">asdict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/timer.html#Timer.asdict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.timer.Timer.asdict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-datarake.utils">
+<span id="datarake-utils-module"></span><h2>datarake.utils module<a class="headerlink" href="#module-datarake.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="datarake.utils.Keychain">
+<em class="property">class </em><code class="sig-prename descclassname">datarake.utils.</code><code class="sig-name descname">Keychain</code><a class="reference internal" href="_modules/datarake/utils.html#Keychain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.utils.Keychain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="datarake.utils.Keychain.password">
+<em class="property">property </em><code class="sig-name descname">password</code><a class="headerlink" href="#datarake.utils.Keychain.password" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="datarake.utils.evaluate">
+<code class="sig-prename descclassname">datarake.utils.</code><code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param">pycode</em>, <em class="sig-param">context=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/utils.html#evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.utils.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.utils.hash">
+<code class="sig-prename descclassname">datarake.utils.</code><code class="sig-name descname">hash</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/utils.html#hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.utils.hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.utils.load_file">
+<code class="sig-prename descclassname">datarake.utils.</code><code class="sig-name descname">load_file</code><span class="sig-paren">(</span><em class="sig-param">fname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/utils.html#load_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.utils.load_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.utils.reduce">
+<code class="sig-prename descclassname">datarake.utils.</code><code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">reducer</em>, <em class="sig-param">values</em>, <em class="sig-param">initial</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/utils.html#reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.utils.reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake.worker">
+<span id="datarake-worker-module"></span><h2>datarake.worker module<a class="headerlink" href="#module-datarake.worker" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="datarake.worker.Handler">
+<em class="property">class </em><code class="sig-prename descclassname">datarake.worker.</code><code class="sig-name descname">Handler</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">client_address</em>, <em class="sig-param">server</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#Handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.Handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">socketserver.StreamRequestHandler</span></code></p>
+<dl class="method">
+<dt id="datarake.worker.Handler.handle">
+<code class="sig-name descname">handle</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#Handler.handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.Handler.handle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="datarake.worker.exclusive">
+<code class="sig-prename descclassname">datarake.worker.</code><code class="sig-name descname">exclusive</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#exclusive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.exclusive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.worker.main">
+<code class="sig-prename descclassname">datarake.worker.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.worker.process_request">
+<code class="sig-prename descclassname">datarake.worker.</code><code class="sig-name descname">process_request</code><span class="sig-paren">(</span><em class="sig-param">request</em>, <em class="sig-param">timer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#process_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.process_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.worker.run_mapper">
+<code class="sig-prename descclassname">datarake.worker.</code><code class="sig-name descname">run_mapper</code><span class="sig-paren">(</span><em class="sig-param">request_id</em>, <em class="sig-param">request</em>, <em class="sig-param">i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/worker.html#run_mapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.worker.run_mapper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake.workerctrl">
+<span id="datarake-workerctrl-module"></span><h2>datarake.workerctrl module<a class="headerlink" href="#module-datarake.workerctrl" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="datarake.workerctrl.cleanup">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">cleanup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#cleanup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.exec_action">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">exec_action</code><span class="sig-paren">(</span><em class="sig-param">action</em>, <em class="sig-param">args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#exec_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.exec_action" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.kill_by_port">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">kill_by_port</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#kill_by_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.kill_by_port" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.main">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.restart">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">restart</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#restart"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.restart" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.show_status">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">show_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#show_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.show_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.start">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param">trace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="datarake.workerctrl.stop">
+<code class="sig-prename descclassname">datarake.workerctrl.</code><code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datarake/workerctrl.html#stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datarake.workerctrl.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-datarake">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datarake" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.html" title="sql2mapreduce package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to quickdb’s documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

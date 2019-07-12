@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>webif.server &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for webif.server</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">wsgiref.util</span> <span class="k">import</span> <span class="n">setup_testing_defaults</span>
+<span class="kn">from</span> <span class="nn">wsgiref.simple_server</span> <span class="k">import</span> <span class="n">make_server</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">jsonnpy</span>
+<span class="kn">import</span> <span class="nn">sql2mapreduce.aggr</span>
+<span class="kn">import</span> <span class="nn">sql2mapreduce.nonaggr</span>
+<span class="kn">import</span> <span class="nn">datarake.master</span>
+<span class="kn">from</span> <span class="nn">sql2mapreduce</span> <span class="k">import</span> <span class="n">sqlast</span>
+
+
+<div class="viewcode-block" id="app"><a class="viewcode-back" href="../../webif.html#webif.server.app">[docs]</a><span class="k">def</span> <span class="nf">app</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">request_body_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CONTENT_LENGTH&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">request_body_size</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">assert</span> <span class="n">request_body_size</span> <span class="o">&lt;</span> <span class="mi">1_000_000</span>
+
+    <span class="n">request</span> <span class="o">=</span> <span class="n">jsonnpy</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;wsgi.input&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">request_body_size</span><span class="p">))</span>
+
+    <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">exec_sql</span><span class="p">(</span><span class="n">request</span><span class="p">[</span><span class="s1">&#39;sql&#39;</span><span class="p">],</span> <span class="n">shared</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;shared&#39;</span><span class="p">),</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">traceback</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;200 OK&#39;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;Content-type&#39;</span><span class="p">,</span> <span class="s1">&#39;application/hscssp-jsonnpy&#39;</span><span class="p">)]</span>
+    <span class="n">start_response</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+
+    <span class="n">response_body</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">jsonnpy</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;result&#39;</span><span class="p">:</span> <span class="n">result</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">time</span><span class="p">}))</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">response_body</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="exec_sql"><a class="viewcode-back" href="../../webif.html#webif.server.exec_sql">[docs]</a><span class="k">def</span> <span class="nf">exec_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">shared</span><span class="o">=</span><span class="p">{},</span> <span class="n">time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_aggr_call</span><span class="p">(</span><span class="n">sql</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">,</span> <span class="n">target_names</span> <span class="o">=</span> <span class="n">exec_aggr_call</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;shared&#39;</span><span class="p">:</span> <span class="n">shared</span><span class="p">},</span> <span class="n">time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">n_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="s1">&#39;group&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">target_names</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>  <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cols</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">,</span> <span class="n">target_names</span> <span class="o">=</span> <span class="n">exec_nonaggr_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;shared&#39;</span><span class="p">:</span> <span class="n">shared</span><span class="p">},</span> <span class="n">time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">or</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;select&#39;</span><span class="p">],</span> <span class="n">target_names</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="exec_nonaggr_sql"><a class="viewcode-back" href="../../webif.html#webif.server.exec_nonaggr_sql">[docs]</a><span class="k">def</span> <span class="nf">exec_nonaggr_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+    <span class="n">make_env</span><span class="p">,</span> <span class="n">target_names</span> <span class="o">=</span> <span class="n">sql2mapreduce</span><span class="o">.</span><span class="n">nonaggr</span><span class="o">.</span><span class="n">sql2make_env</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">datarake</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">make_env</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="exec_aggr_call"><a class="viewcode-back" href="../../webif.html#webif.server.exec_aggr_call">[docs]</a><span class="k">def</span> <span class="nf">exec_aggr_call</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="n">make_envs</span><span class="p">,</span> <span class="n">stmt</span><span class="p">,</span> <span class="n">target_names</span> <span class="o">=</span> <span class="n">sql2mapreduce</span><span class="o">.</span><span class="n">aggr</span><span class="o">.</span><span class="n">sql2make_envs</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="n">agg_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">context</span><span class="p">[</span><span class="s1">&#39;AggregateResult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agg_results</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">make_env</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">make_envs</span><span class="p">):</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">datarake</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">make_env</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
+        <span class="n">agg_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">pcb</span> <span class="o">=</span> <span class="n">sql2mapreduce</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">PycodeBuilder</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">results</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Nothing to evaluate&#39;</span><span class="p">)</span>
+
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">group_value</span><span class="p">,</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">pcb</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">val</span><span class="p">),</span> <span class="nb">dict</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">stmt</span><span class="o">.</span><span class="n">targetList</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">items</span><span class="p">,</span> <span class="n">target_names</span></div>
+
+
+<div class="viewcode-block" id="is_aggr_call"><a class="viewcode-back" href="../../webif.html#webif.server.is_aggr_call">[docs]</a><span class="k">def</span> <span class="nf">is_aggr_call</span><span class="p">(</span><span class="n">sql</span><span class="p">):</span>
+    <span class="n">stmts</span> <span class="o">=</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">parse_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+    <span class="n">sqlast</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stmts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Too many statements&#39;</span><span class="p">)</span>
+    <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stmt</span>
+    <span class="n">sqlast</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">sqlast</span><span class="o">.</span><span class="n">SelectStmt</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;Not supported statement: </span><span class="si">{stmt.__class__.__name__}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">aggr_calls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sql2mapreduce</span><span class="o">.</span><span class="n">aggr</span><span class="o">.</span><span class="n">is_aggr_call</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+            <span class="n">aggr_calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+    <span class="n">stmt</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">aggr_calls</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--port&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8002</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">make_server</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">app</span><span class="p">)</span> <span class="k">as</span> <span class="n">httpd</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Serving on port </span><span class="si">{args.port}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        <span class="n">httpd</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

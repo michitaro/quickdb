@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sql2mapreduce.config.pycodebuilder &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../config.html" accesskey="U">sql2mapreduce.config</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sql2mapreduce.config.pycodebuilder</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">..sqlast</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">sqlfuncs</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">pycodebuilder</span>
+
+
+<div class="viewcode-block" id="PycodeBuilder"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder">[docs]</a><span class="k">class</span> <span class="nc">PycodeBuilder</span><span class="p">(</span><span class="n">pycodebuilder</span><span class="o">.</span><span class="n">PycodeBuilder</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+        <span class="n">fromClause</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stmt</span><span class="o">.</span><span class="n">fromClause</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column_base</span> <span class="o">=</span> <span class="p">[</span><span class="n">fromClause</span><span class="o">.</span><span class="n">relname</span><span class="p">]</span> <span class="k">if</span> <span class="n">fromClause</span><span class="o">.</span><span class="n">schemaname</span> <span class="k">else</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PycodeBuilder.pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.pycode">[docs]</a>    <span class="k">def</span> <span class="nf">pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="c1"># if not hasattr(self, f&#39;{ast.__class__.__name__}_to_pycode&#39;):</span>
+        <span class="c1">#     import ipdb ; ipdb.set_trace()</span>
+        <span class="k">if</span> <span class="n">ast</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;None&#39;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{ast.__class__.__name__}</span><span class="s1">_to_pycode&#39;</span><span class="p">)(</span><span class="n">ast</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pycode</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PycodeBuilder.A_Const_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Const_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">A_Const_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.ColumnRef_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.ColumnRef_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">ColumnRef_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">String</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;shared&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;shared[{ repr(key[1]) }]&#39;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">consts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">consts</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.t}</span><span class="s1">.column(&#39;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resolve_colmun_ref</span><span class="p">(</span><span class="n">ast</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.resolve_colmun_ref"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.resolve_colmun_ref">[docs]</a>    <span class="k">def</span> <span class="nf">resolve_colmun_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">column_base</span> <span class="o">+</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">fields</span><span class="p">])</span>
+        <span class="c1"># check(len(ref) &gt;= 2, f&#39;no such column: {repr(&quot;.&quot;.join(ref))}&#39;)</span>
+        <span class="k">return</span> <span class="n">ref</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.FuncCall_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.FuncCall_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">FuncCall_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">name_tuple</span>
+        <span class="n">check</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">sqlfuncs</span><span class="o">.</span><span class="n">mapping</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;no such function: {&quot;.&quot;.join(key)}&#39;</span><span class="p">)</span>
+        <span class="n">real_name</span> <span class="o">=</span> <span class="n">sqlfuncs</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">named_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">NamedArgExpr</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\W&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">named_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{name}</span><span class="s1">={self(a.arg)}&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;sqlfuncs.{ real_name }({ l2s(args + named_args) })&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.A_Indirection_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Indirection_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">A_Indirection_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">indirection</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;not supported syntax: x[y][z]&#39;</span><span class="p">)</span>
+        <span class="n">check</span><span class="p">(</span><span class="ow">not</span> <span class="n">ast</span><span class="o">.</span><span class="n">indirection</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_slice</span><span class="p">,</span> <span class="s1">&#39;not supported syntax: x[y:z]&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;({ self(ast.arg) })[:, { self(ast.indirection[0].uidx) }]&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.BoolExpr_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.BoolExpr_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">BoolExpr_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ast</span><span class="o">.</span><span class="n">op_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;and&#39;</span><span class="p">,</span> <span class="s1">&#39;or&#39;</span><span class="p">]:</span>
+            <span class="n">exprs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">args</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;funcs.logical_{ ast.op_type }({ l2s(exprs) })&#39;</span>
+        <span class="k">elif</span> <span class="n">ast</span><span class="o">.</span><span class="n">op_type</span> <span class="o">==</span> <span class="s1">&#39;not&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;numpy.logical_not({ self(ast.args[0]) })&#39;</span></div>
+
+    <span class="c1"># def BoolExpr_to_pycode(self, ast):</span>
+    <span class="c1">#     if ast.op_type in [&#39;and&#39;, &#39;or&#39;]:</span>
+    <span class="c1">#         flags = []</span>
+    <span class="c1">#         exprs = []</span>
+    <span class="c1">#         for a in ast.args:</span>
+    <span class="c1">#             flag = self.is_flag(a)</span>
+    <span class="c1">#             if flag: # OPTIMZE</span>
+    <span class="c1">#                 flags.append(flag)</span>
+    <span class="c1">#             else:</span>
+    <span class="c1">#                 exprs.append(a)</span>
+    <span class="c1">#         exprs = [self(e) for e in exprs]</span>
+    <span class="c1">#         if len(flags) &gt; 0:</span>
+    <span class="c1">#             exprs.append(f&#39;{ self.t }.flags_{ ast.op_type }(*{ repr(flags) })&#39;)</span>
+    <span class="c1">#         return f&#39;funcs.logical_{ ast.op_type }({ l2s(exprs) })&#39;</span>
+    <span class="c1">#     elif ast.op_type == &#39;not&#39;:</span>
+    <span class="c1">#         return f&#39;numpy.logical_not({ self(ast.args[0]) })&#39;</span>
+
+    <span class="c1"># def is_flag(self, ast):</span>
+    <span class="c1">#     if isinstance(ast, ColumnRef):</span>
+    <span class="c1">#         return (self.resolve_colmun_ref(ast), True)</span>
+    <span class="c1">#     if isinstance(ast, BoolExpr) and ast.op_type == &#39;not&#39; and isinstance(ast.args[0], ColumnRef):</span>
+    <span class="c1">#         return (self.resolve_colmun_ref(ast.args[0]), False)</span>
+
+<div class="viewcode-block" id="PycodeBuilder.A_Expr_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Expr_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">A_Expr_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ast</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ast</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">str</span> <span class="o">==</span> <span class="s1">&#39;!&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;funcs.factorial({ self(ast.lexpr) })&#39;</span>
+            <span class="n">pyoperator</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;=&#39;</span><span class="p">:</span> <span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;&gt;&#39;</span><span class="p">:</span> <span class="s1">&#39;!=&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&lt;&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&lt;=&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&gt;=&#39;</span><span class="p">:</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;+&#39;</span><span class="p">:</span> <span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;-&#39;</span><span class="p">:</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;/&#39;</span><span class="p">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;//&#39;</span><span class="p">:</span> <span class="s1">&#39;//&#39;</span><span class="p">,</span>
+            <span class="p">}[</span><span class="n">ast</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;({ self(ast.lexpr) }) { pyoperator } ({ self(ast.rexpr) })&#39;</span>
+        <span class="k">elif</span> <span class="n">ast</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="mi">11</span><span class="p">:</span> <span class="c1"># between</span>
+            <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;funcs.between({ self(ast.lexpr) }, { self(ast.rexpr[0]) }, { self(ast.rexpr[1]) })&#39;</span>
+        <span class="k">elif</span> <span class="n">ast</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># in</span>
+            <span class="k">raise</span> <span class="n">SqlError</span><span class="p">(</span><span class="s1">&#39;not implemented&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SqlError</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;unknown kind: </span><span class="si">{ast.kind}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.Integer_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.Integer_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">Integer_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">ival</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.Float_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.Float_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">Float_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="c1"># pg_query classifies big integer such as 37484559004074072 as a float</span>
+        <span class="c1"># return repr(float(ast.str))</span>
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">str</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.String_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.String_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">String_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.RowExpr_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.RowExpr_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">RowExpr_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="n">pyargs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">args</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;({ l2s(pyargs) },)&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.NullTest_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.NullTest_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">NullTest_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">arg</span><span class="p">,</span> <span class="n">ColumnRef</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;null test can be performed on only a ColumnRef&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;{ self.t }.null_check({ repr(self.resolve_colmun_ref(ast.arg)) }, { ast.yes })&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.AggregateResultAst_to_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.AggregateResultAst_to_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">AggregateResultAst_to_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;AggregateResult[</span><span class="si">{ast.name}</span><span class="s1">][</span><span class="si">{self.a}</span><span class="s1">.group_value].result()&#39;</span></div>
+
+<div class="viewcode-block" id="PycodeBuilder.args_pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.PycodeBuilder.args_pycode">[docs]</a>    <span class="k">def</span> <span class="nf">args_pycode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\W&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{k}</span><span class="s1">={self(v)}&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">l2s</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="is_series_ast"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.is_series_ast">[docs]</a><span class="k">def</span> <span class="nf">is_series_ast</span><span class="p">(</span><span class="n">ast</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span> <span class="k">for</span> <span class="n">A</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ColumnRef</span><span class="p">,</span> <span class="n">NullTest</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="l2s"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.l2s">[docs]</a><span class="k">def</span> <span class="nf">l2s</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="p">)</span></div>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+
+<span class="n">consts</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s1">&#39;pi&#39;</span><span class="p">,):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">,):</span> <span class="n">numpy</span><span class="o">.</span><span class="n">e</span><span class="p">,</span>
+    <span class="p">(</span><span class="s1">&#39;degree&#39;</span><span class="p">,):</span> <span class="mi">180</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="p">(</span><span class="s1">&#39;arcmin&#39;</span><span class="p">,):</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">180</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">,):</span> <span class="mi">3600</span> <span class="o">*</span> <span class="mi">180</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="ast2pycode"><a class="viewcode-back" href="../../../sql2mapreduce.config.html#sql2mapreduce.config.pycodebuilder.ast2pycode">[docs]</a><span class="k">def</span> <span class="nf">ast2pycode</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">stmt</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">PycodeBuilder</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">pycode</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../config.html" >sql2mapreduce.config</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

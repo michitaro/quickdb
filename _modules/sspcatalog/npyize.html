@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sspcatalog.npyize &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sspcatalog.npyize</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">astropy.io.fits</span> <span class="k">as</span> <span class="nn">afits</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">serialize</span>
+
+
+<div class="viewcode-block" id="npyize"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.npyize.npyize">[docs]</a><span class="k">def</span> <span class="nf">npyize</span><span class="p">(</span><span class="n">src_fname</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">afits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">src_fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+        <span class="n">hdu</span> <span class="o">=</span> <span class="n">hdul</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">extract_non_flag_columns</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+        <span class="n">flag_meta</span> <span class="o">=</span> <span class="n">extract_flags</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out_dir}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span> <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="n">flag_meta</span> <span class="p">},</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_non_flag_columns"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.npyize.extract_non_flag_columns">[docs]</a><span class="k">def</span> <span class="nf">extract_non_flag_columns</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;flags&#39;</span><span class="p">:</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">serialize</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out_dir}</span><span class="s1">/</span><span class="si">{name}</span><span class="s1">.npy&#39;</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_flags"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.npyize.extract_flags">[docs]</a><span class="k">def</span> <span class="nf">extract_flags</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+    <span class="c1"># TTYPE1  = &#39;flags   &#39;   / bits for all Flag fields; see also TFLAGn</span>
+    <span class="c1"># TFORM1  = &#39;61X     &#39;   / format of field</span>
+    <span class="n">n_bits</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;uint</span><span class="si">{n_bits}</span><span class="s1">&#39;</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">header</span>
+    <span class="n">n_rows</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;NAXIS2&#39;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;TTYPE1&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;flags&#39;</span>
+    <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;\d+X$&#39;</span><span class="p">,</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;TFORM1&#39;</span><span class="p">])</span>
+    <span class="n">n_flags</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;TFORM1&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">n_files</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_flags</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_bits</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">flag_meta</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_files</span><span class="p">):</span>
+        <span class="n">bit_field</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">n_bits</span> <span class="p">:</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">n_bits</span><span class="p">]):</span>
+            <span class="n">bit_field</span> <span class="o">|=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1</span> <span class="o">&amp;</span> <span class="n">f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">j</span>
+            <span class="n">flag_name</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">f</span><span class="s1">&#39;TFLAG{n_bits * i + j + 1}&#39;</span><span class="p">]</span>
+            <span class="n">flag_meta</span><span class="p">[</span><span class="n">flag_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out_dir}</span><span class="s1">/flags-</span><span class="si">{i}</span><span class="s1">.npy&#39;</span><span class="p">,</span> <span class="n">bit_field</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">flag_meta</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--out&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;source&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">npyize</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

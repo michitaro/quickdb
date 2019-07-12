@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sql2mapreduce.config package &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="sql2mapreduce.config.aggregators package" href="sql2mapreduce.config.aggregators.html" />
+    <link rel="prev" title="sql2mapreduce package" href="sql2mapreduce.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.config.aggregators.html" title="sql2mapreduce.config.aggregators package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.html" title="sql2mapreduce package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="sql2mapreduce.html" accesskey="U">sql2mapreduce package</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">sql2mapreduce.config package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.funcs">sql2mapreduce.config.funcs module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.pycodebuilder">sql2mapreduce.config.pycodebuilder module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config.sqlfuncs">sql2mapreduce.config.sqlfuncs module</a></li>
+<li><a class="reference internal" href="#module-sql2mapreduce.config">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sql2mapreduce.html"
+                        title="previous chapter">sql2mapreduce package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sql2mapreduce.config.aggregators.html"
+                        title="next chapter">sql2mapreduce.config.aggregators package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sql2mapreduce.config.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="sql2mapreduce-config-package">
+<h1>sql2mapreduce.config package<a class="headerlink" href="#sql2mapreduce-config-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sql2mapreduce.config.aggregators.html">sql2mapreduce.config.aggregators package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.count">sql2mapreduce.config.aggregators.count module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.crossmatch">sql2mapreduce.config.aggregators.crossmatch module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.histogram">sql2mapreduce.config.aggregators.histogram module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.histogram2d">sql2mapreduce.config.aggregators.histogram2d module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.minmax">sql2mapreduce.config.aggregators.minmax module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators.pickone">sql2mapreduce.config.aggregators.pickone module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sql2mapreduce.config.aggregators.html#module-sql2mapreduce.config.aggregators">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-sql2mapreduce.config.funcs">
+<span id="sql2mapreduce-config-funcs-module"></span><h2>sql2mapreduce.config.funcs module<a class="headerlink" href="#module-sql2mapreduce.config.funcs" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sql2mapreduce.config.funcs.between">
+<code class="sig-prename descclassname">sql2mapreduce.config.funcs.</code><code class="sig-name descname">between</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">b</em>, <em class="sig-param">c</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/funcs.html#between"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.funcs.between" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.funcs.factorial">
+<code class="sig-prename descclassname">sql2mapreduce.config.funcs.</code><code class="sig-name descname">factorial</code><span class="sig-paren">(</span><em class="sig-param">a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/funcs.html#factorial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.funcs.factorial" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.funcs.logical_and">
+<code class="sig-prename descclassname">sql2mapreduce.config.funcs.</code><code class="sig-name descname">logical_and</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/funcs.html#logical_and"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.funcs.logical_and" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.funcs.logical_or">
+<code class="sig-prename descclassname">sql2mapreduce.config.funcs.</code><code class="sig-name descname">logical_or</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/funcs.html#logical_or"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.funcs.logical_or" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.pycodebuilder">
+<span id="sql2mapreduce-config-pycodebuilder-module"></span><h2>sql2mapreduce.config.pycodebuilder module<a class="headerlink" href="#module-sql2mapreduce.config.pycodebuilder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">sql2mapreduce.config.pycodebuilder.</code><code class="sig-name descname">PycodeBuilder</code><span class="sig-paren">(</span><em class="sig-param">stmt</em>, <em class="sig-param">t</em>, <em class="sig-param">a='a'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sql2mapreduce.html#sql2mapreduce.pycodebuilder.PycodeBuilder" title="sql2mapreduce.pycodebuilder.PycodeBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">sql2mapreduce.pycodebuilder.PycodeBuilder</span></code></a></p>
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Const_to_pycode">
+<code class="sig-name descname">A_Const_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.A_Const_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Const_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Expr_to_pycode">
+<code class="sig-name descname">A_Expr_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.A_Expr_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Expr_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Indirection_to_pycode">
+<code class="sig-name descname">A_Indirection_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.A_Indirection_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.A_Indirection_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.AggregateResultAst_to_pycode">
+<code class="sig-name descname">AggregateResultAst_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.AggregateResultAst_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.AggregateResultAst_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.BoolExpr_to_pycode">
+<code class="sig-name descname">BoolExpr_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.BoolExpr_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.BoolExpr_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.ColumnRef_to_pycode">
+<code class="sig-name descname">ColumnRef_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.ColumnRef_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.ColumnRef_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.Float_to_pycode">
+<code class="sig-name descname">Float_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.Float_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.Float_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.FuncCall_to_pycode">
+<code class="sig-name descname">FuncCall_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.FuncCall_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.FuncCall_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.Integer_to_pycode">
+<code class="sig-name descname">Integer_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.Integer_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.Integer_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.NullTest_to_pycode">
+<code class="sig-name descname">NullTest_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.NullTest_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.NullTest_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.RowExpr_to_pycode">
+<code class="sig-name descname">RowExpr_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.RowExpr_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.RowExpr_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.String_to_pycode">
+<code class="sig-name descname">String_to_pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.String_to_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.String_to_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.args_pycode">
+<code class="sig-name descname">args_pycode</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.args_pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.args_pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.pycode">
+<code class="sig-name descname">pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sql2mapreduce.config.pycodebuilder.PycodeBuilder.resolve_colmun_ref">
+<code class="sig-name descname">resolve_colmun_ref</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#PycodeBuilder.resolve_colmun_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.PycodeBuilder.resolve_colmun_ref" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.pycodebuilder.ast2pycode">
+<code class="sig-prename descclassname">sql2mapreduce.config.pycodebuilder.</code><code class="sig-name descname">ast2pycode</code><span class="sig-paren">(</span><em class="sig-param">ast</em>, <em class="sig-param">stmt</em>, <em class="sig-param">t</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#ast2pycode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.ast2pycode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.pycodebuilder.is_series_ast">
+<code class="sig-prename descclassname">sql2mapreduce.config.pycodebuilder.</code><code class="sig-name descname">is_series_ast</code><span class="sig-paren">(</span><em class="sig-param">ast</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#is_series_ast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.is_series_ast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.pycodebuilder.l2s">
+<code class="sig-prename descclassname">sql2mapreduce.config.pycodebuilder.</code><code class="sig-name descname">l2s</code><span class="sig-paren">(</span><em class="sig-param">l</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/pycodebuilder.html#l2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.pycodebuilder.l2s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config.sqlfuncs">
+<span id="sql2mapreduce-config-sqlfuncs-module"></span><h2>sql2mapreduce.config.sqlfuncs module<a class="headerlink" href="#module-sql2mapreduce.config.sqlfuncs" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sql2mapreduce.config.sqlfuncs.flux_error_to_mag_error">
+<code class="sig-prename descclassname">sql2mapreduce.config.sqlfuncs.</code><code class="sig-name descname">flux_error_to_mag_error</code><span class="sig-paren">(</span><em class="sig-param">flux</em>, <em class="sig-param">flux_error</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/sqlfuncs.html#flux_error_to_mag_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.sqlfuncs.flux_error_to_mag_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.sqlfuncs.flux_to_mag">
+<code class="sig-prename descclassname">sql2mapreduce.config.sqlfuncs.</code><code class="sig-name descname">flux_to_mag</code><span class="sig-paren">(</span><em class="sig-param">flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/sqlfuncs.html#flux_to_mag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.sqlfuncs.flux_to_mag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.sqlfuncs.is_finite">
+<code class="sig-prename descclassname">sql2mapreduce.config.sqlfuncs.</code><code class="sig-name descname">is_finite</code><span class="sig-paren">(</span><em class="sig-param">a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/sqlfuncs.html#is_finite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.sqlfuncs.is_finite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sql2mapreduce.config.sqlfuncs.mag_to_flux">
+<code class="sig-prename descclassname">sql2mapreduce.config.sqlfuncs.</code><code class="sig-name descname">mag_to_flux</code><span class="sig-paren">(</span><em class="sig-param">mag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config/sqlfuncs.html#mag_to_flux"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.sqlfuncs.mag_to_flux" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-sql2mapreduce.config">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-sql2mapreduce.config" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sql2mapreduce.config.preamble">
+<code class="sig-prename descclassname">sql2mapreduce.config.</code><code class="sig-name descname">preamble</code><span class="sig-paren">(</span><em class="sig-param">stmt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sql2mapreduce/config.html#preamble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sql2mapreduce.config.preamble" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.config.aggregators.html" title="sql2mapreduce.config.aggregators package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sql2mapreduce.html" title="sql2mapreduce package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="sql2mapreduce.html" >sql2mapreduce package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

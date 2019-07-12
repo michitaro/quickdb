@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sspcatalog.buildrepo &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for sspcatalog.buildrepo</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">import</span> <span class="nn">logging</span> <span class="p">;</span> <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">npyize</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--out&#39;</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--parallel&#39;</span><span class="p">,</span> <span class="s1">&#39;-j&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;deepCoadd_results&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">src_root</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">deepCoadd_results</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{args.out}</span><span class="s1">/patches&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">parallel</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">process_ref</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{src_root}</span><span class="s1">/*/*/*/ref-*.fits*&#39;</span><span class="p">),</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">),</span>
+        <span class="p">))</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">process_forced</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{src_root}</span><span class="s1">/*/*/*/forced_src-*.fits*&#39;</span><span class="p">),</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">),</span>
+        <span class="p">))</span>
+        <span class="n">repair_blank_files</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">make_patch_meta</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{args.out}</span><span class="s1">/patches/*&#39;</span><span class="p">))</span>
+    <span class="n">make_root_meta</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="process_ref"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.process_ref">[docs]</a><span class="k">def</span> <span class="nf">process_ref</span><span class="p">(</span><span class="n">src_fname</span><span class="p">,</span> <span class="n">out_root</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;converting </span><span class="si">{src_fname}</span><span class="s1">...&#39;</span><span class="p">)</span>
+    <span class="n">bname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src_fname</span><span class="p">)</span> <span class="c1"># ref-10055-1,0.fits</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">tract</span><span class="p">,</span> <span class="n">patch</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">bname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{out_root}</span><span class="s1">/patches/</span><span class="si">{tract}</span><span class="s1">-</span><span class="si">{patch}</span><span class="s1">/ref&#39;</span>
+    <span class="n">npyize</span><span class="o">.</span><span class="n">npyize</span><span class="p">(</span><span class="n">src_fname</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="process_forced"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.process_forced">[docs]</a><span class="k">def</span> <span class="nf">process_forced</span><span class="p">(</span><span class="n">src_fname</span><span class="p">,</span> <span class="n">out_root</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;converting </span><span class="si">{src_fname}</span><span class="s1">...&#39;</span><span class="p">)</span>
+    <span class="n">bname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">src_fname</span><span class="p">)</span> <span class="c1"># forced_src-HSC-G-10055-2,0.fits</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;forced_src-(.*?)-(\d+)-(\d+,\d+)\.fits&#39;</span><span class="p">,</span> <span class="n">bname</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">m</span>
+    <span class="n">filterName</span><span class="p">,</span> <span class="n">tract</span><span class="p">,</span> <span class="n">patch</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{out_root}</span><span class="s1">/patches/</span><span class="si">{tract}</span><span class="s1">-</span><span class="si">{patch}</span><span class="s1">/forced/</span><span class="si">{filterName}</span><span class="s1">&#39;</span>
+    <span class="n">npyize</span><span class="o">.</span><span class="n">npyize</span><span class="p">(</span><span class="n">src_fname</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="repair_blank_files"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.repair_blank_files">[docs]</a><span class="k">def</span> <span class="nf">repair_blank_files</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="n">FILTERS</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out}</span><span class="s1">/patches/*/forced/*&#39;</span><span class="p">))</span>
+    <span class="n">template_dirs</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out}</span><span class="s1">/patches/*/forced/</span><span class="si">{f}</span><span class="s1">/*.npy&#39;</span><span class="p">))))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">FILTERS</span><span class="p">}</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">filterName</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">template_dirs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{d}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">array_meta</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">npy</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{d}</span><span class="s1">/*.npy&#39;</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">npy</span><span class="p">)</span>
+            <span class="n">array_meta</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">npy</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">])]</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">template</span><span class="p">[</span><span class="n">filterName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;flag&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;array_meta&#39;</span><span class="p">:</span> <span class="n">array_meta</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">repair_blank_file1</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out}</span><span class="s1">/patches/*&#39;</span><span class="p">),</span>
+        <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">template</span><span class="p">),</span>
+    <span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="repair_blank_file1"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.repair_blank_file1">[docs]</a><span class="k">def</span> <span class="nf">repair_blank_file1</span><span class="p">(</span><span class="n">patch_dir</span><span class="p">,</span> <span class="n">forced_template</span><span class="p">):</span>
+    <span class="c1"># logging.info(f&#39;reparing {patch_dir}...&#39;)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">n_objects</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;n_objects&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">filterName</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">forced_template</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/forced/</span><span class="si">{filterName}</span><span class="s1">/*.npy&#39;</span><span class="p">):</span>
+            <span class="c1"># at least 1 *.npy file is there</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># no *.npy files</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/forced/</span><span class="si">{filterName}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/forced/</span><span class="si">{filterName}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span>
+                    <span class="s1">&#39;n_objects&#39;</span><span class="p">:</span> <span class="n">n_objects</span><span class="p">,</span>
+                    <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;flag&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;missing&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">((</span><span class="n">n_objects</span><span class="p">,)</span> <span class="o">+</span> <span class="n">shape</span><span class="p">),</span> <span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span> <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;array_meta&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+                <span class="p">},</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_patch_meta"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.make_patch_meta">[docs]</a><span class="k">def</span> <span class="nf">make_patch_meta</span><span class="p">(</span><span class="n">patch_dir</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/ref&#39;</span><span class="p">)</span>
+    <span class="n">n_objects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/ref/id.npy&#39;</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span>
+            <span class="s1">&#39;n_objects&#39;</span><span class="p">:</span> <span class="n">n_objects</span><span class="p">,</span>
+        <span class="p">},</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_root_meta"><a class="viewcode-back" href="../../sspcatalog.html#sspcatalog.buildrepo.make_root_meta">[docs]</a><span class="k">def</span> <span class="nf">make_root_meta</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+    <span class="n">stat</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">patch_dir</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out}</span><span class="s1">/patches/*&#39;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{patch_dir}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">patch_meta</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">stat</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">patch_dir</span><span class="p">)]</span> <span class="o">=</span> <span class="n">patch_meta</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{out}</span><span class="s1">/meta.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

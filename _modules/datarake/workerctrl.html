@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>datarake.workerctrl &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for datarake.workerctrl</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">batch</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">logging</span> <span class="p">;</span> <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--trace&#39;</span><span class="p">,</span> <span class="s1">&#39;-t&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;action&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="s1">&#39;start stop restart status cleanup kill-by-port&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span><span class="p">:</span>
+        <span class="n">exec_action</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="exec_action"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.exec_action">[docs]</a><span class="k">def</span> <span class="nf">exec_action</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s1">&#39;status&#39;</span><span class="p">:</span>
+        <span class="n">show_status</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
+        <span class="n">start</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">trace</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span>
+        <span class="n">stop</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s1">&#39;restart&#39;</span><span class="p">:</span>
+        <span class="n">restart</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s1">&#39;kill-by-port&#39;</span><span class="p">:</span>
+        <span class="n">kill_by_port</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="start"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.start">[docs]</a><span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">trace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s1">&#39;DATARAKE_TRACE=1&#39;</span> <span class="k">if</span> <span class="n">trace</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s2">/python_path</span>
+<span class="s2">                                   </span><span class="si">{env}</span><span class="s2"> nohup </span><span class="si">{worker.python_path}</span><span class="s2"> -m datarake.worker --port </span><span class="si">{worker.port}</span><span class="s2"> &gt;&gt; log 2&gt;&amp;1 &amp;&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">batch</span><span class="o">.</span><span class="n">show_result</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="stop"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.stop">[docs]</a><span class="k">def</span> <span class="nf">stop</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s2">/python_path</span>
+<span class="s2">                                   [ -e pid ] &amp;&amp; kill $(cat pid)&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">batch</span><span class="o">.</span><span class="n">show_result</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="cleanup"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.cleanup">[docs]</a><span class="k">def</span> <span class="nf">cleanup</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s2">/python_path</span>
+<span class="s2">                                   rm -rf log&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">batch</span><span class="o">.</span><span class="n">show_result</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="show_status"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.show_status">[docs]</a><span class="k">def</span> <span class="nf">show_status</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s2">/python_path</span>
+<span class="s2">                                   [ -e pid ] &amp;&amp; cat pid&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">pids</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="s1">&#39;ignore&#39;</span><span class="p">))</span> <span class="k">for</span> <span class="n">worker</span><span class="p">,</span> <span class="n">returncode</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+    <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">pids</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="restart"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.restart">[docs]</a><span class="k">def</span> <span class="nf">restart</span><span class="p">():</span>
+    <span class="n">stop</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="kill_by_port"><a class="viewcode-back" href="../../datarake.html#datarake.workerctrl.kill_by_port">[docs]</a><span class="k">def</span> <span class="nf">kill_by_port</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;netstat -nlp | grep 0.0.0.0:</span><span class="si">{worker.port}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">pid_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;\s(\d+)/python\s*&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">worker</span><span class="p">,</span> <span class="n">returncode</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">pid_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="n">pid</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;kill </span><span class="si">{pid}</span><span class="s1"> on </span><span class="si">{worker.host}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">pid</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s1">&#39;ssh&#39;</span><span class="p">,</span> <span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="s1">&#39;kill&#39;</span><span class="p">,</span> <span class="s1">&#39;-9&#39;</span><span class="p">,</span> <span class="n">pid</span><span class="p">])</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s1">&#39;ssh&#39;</span><span class="p">,</span> <span class="n">worker</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="s1">&#39;rm&#39;</span><span class="p">,</span> <span class="s1">&#39;-rf&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{worker.work_dir}</span><span class="s1">/.lock&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{worker.work_dir}</span><span class="s1">/pid&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">cmd</span><span class="p">(</span><span class="n">worker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&#39;cd </span><span class="si">{worker.work_dir}</span><span class="s2">/python_path</span>
+<span class="s2">                                   rm -rf pid .lock&#39;&quot;&quot;&quot;</span><span class="p">]</span>
+    <span class="n">batch</span><span class="o">.</span><span class="n">show_result</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">ssh</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

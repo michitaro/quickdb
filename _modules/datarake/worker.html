@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>datarake.worker &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for datarake.worker</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">socketserver</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">secrets</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">logging</span> <span class="p">;</span> <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">.timer</span> <span class="k">import</span> <span class="n">Timer</span>
+
+
+<span class="n">g_worker_process</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">g_debug</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../datarake.html#datarake.worker.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">g_worker_process</span><span class="p">,</span> <span class="n">g_debug</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--port&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2394</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--host&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--pid-file&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;pid&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--debug&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+        <span class="n">g_debug</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">with</span> <span class="n">exclusive</span><span class="p">():</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">pid_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{os.getpid()}&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">socketserver</span><span class="o">.</span><span class="n">TCPServer</span><span class="o">.</span><span class="n">allow_reuse_address</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">with</span> <span class="n">socketserver</span><span class="o">.</span><span class="n">TCPServer</span><span class="p">((</span><span class="n">args</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">),</span> <span class="n">Handler</span><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+                <span class="n">th</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">def</span> <span class="nf">shutdown_server</span><span class="p">():</span> <span class="n">server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+                <span class="k">def</span> <span class="nf">on_sigterm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+                    <span class="n">th</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">shutdown_server</span><span class="p">)</span>
+                    <span class="n">th</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">on_sigterm</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;worker successfully started&#39;</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">()</span> <span class="k">as</span> <span class="n">g_worker_process</span><span class="p">:</span>
+                    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">th</span><span class="p">:</span> <span class="n">th</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">pid_file</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;worker exited normally&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Handler"><a class="viewcode-back" href="../../datarake.html#datarake.worker.Handler">[docs]</a><span class="k">class</span> <span class="nc">Handler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">StreamRequestHandler</span><span class="p">):</span>
+<div class="viewcode-block" id="Handler.handle"><a class="viewcode-back" href="../../datarake.html#datarake.worker.Handler.handle">[docs]</a>    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_credentials</span><span class="p">():</span>
+            <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">timer</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">):</span>
+                    <span class="n">request</span> <span class="o">=</span> <span class="n">serialize</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rfile</span><span class="p">)</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">process_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timer</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="n">response</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+            <span class="n">serialize</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_verify_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">master_addr</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_address</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">error</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;connection from </span><span class="si">{self.client_address}</span><span class="s1"> is not allowed&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="n">nonce</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;{secrets.randbits(512):0128x}&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">nonce</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">hashed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfile</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">hashed</span> <span class="o">!=</span> <span class="n">utils</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">nonce</span><span class="p">):</span>
+                <span class="n">error</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;invalid credentials&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;ng: {&quot;, &quot;.join(error)}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;ok</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span></div>
+
+
+<span class="c1"># def process_request_safe(request):</span>
+<span class="c1">#     from . import parallel</span>
+<span class="c1">#     env = utils.evaluate(request[&#39;make_env&#39;], request.get(&#39;context&#39;))</span>
+<span class="c1">#     mapped_values = parallel.map(env[&#39;mapper&#39;], config.tasks(request[&#39;worker&#39;], env))</span>
+<span class="c1">#     return utils.reduce(env[&#39;reducer&#39;], mapped_values, env.get(&#39;initial&#39;))</span>
+
+
+<div class="viewcode-block" id="process_request"><a class="viewcode-back" href="../../datarake.html#datarake.worker.process_request">[docs]</a><span class="k">def</span> <span class="nf">process_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timer</span><span class="p">):</span>
+    <span class="c1"># equivalent to process_request_safe above but fast</span>
+    <span class="k">global</span> <span class="n">g_request_id</span>
+    <span class="kn">import</span> <span class="nn">itertools</span>
+    <span class="k">if</span> <span class="n">g_debug</span><span class="p">:</span>
+        <span class="n">starmap</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">starmap</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">starmap</span> <span class="o">=</span> <span class="n">g_worker_process</span><span class="o">.</span><span class="n">starmap</span>
+    <span class="n">process_request</span><span class="o">.</span><span class="n">request_id</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">with</span> <span class="n">timer</span><span class="p">(</span><span class="s1">&#39;make_env&#39;</span><span class="p">):</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">request</span><span class="p">[</span><span class="s1">&#39;make_env&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;context&#39;</span><span class="p">,</span> <span class="p">{})))</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tasks</span><span class="p">(</span><span class="n">request</span><span class="p">[</span><span class="s1">&#39;worker&#39;</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">timer</span><span class="p">(</span><span class="s1">&#39;map&#39;</span><span class="p">):</span>
+        <span class="n">mapped_values</span> <span class="o">=</span> <span class="n">starmap</span><span class="p">(</span><span class="n">run_mapper</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">process_request</span><span class="o">.</span><span class="n">request_id</span><span class="p">),</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">request</span><span class="p">),</span>
+            <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">))</span>
+        <span class="p">))</span>
+    <span class="k">with</span> <span class="n">timer</span><span class="p">(</span><span class="s1">&#39;reduce&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;reducer&#39;</span><span class="p">],</span> <span class="n">mapped_values</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;initial&#39;</span><span class="p">))</span></div>
+<span class="n">process_request</span><span class="o">.</span><span class="n">request_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<div class="viewcode-block" id="run_mapper"><a class="viewcode-back" href="../../datarake.html#datarake.worker.run_mapper">[docs]</a><span class="k">def</span> <span class="nf">run_mapper</span><span class="p">(</span><span class="n">request_id</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="n">memo</span> <span class="o">=</span> <span class="n">run_mapper</span><span class="o">.</span><span class="n">memo</span>
+    <span class="k">if</span> <span class="n">memo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;request_id&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="n">request_id</span><span class="p">:</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">request</span><span class="p">[</span><span class="s1">&#39;make_env&#39;</span><span class="p">],</span> <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;context&#39;</span><span class="p">))</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tasks</span><span class="p">(</span><span class="n">request</span><span class="p">[</span><span class="s1">&#39;worker&#39;</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        <span class="n">memo</span><span class="p">[</span><span class="s1">&#39;request_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_id</span>
+        <span class="n">memo</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="n">memo</span><span class="p">[</span><span class="s1">&#39;tasks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tasks</span>
+    <span class="k">return</span> <span class="n">memo</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;mapper&#39;</span><span class="p">](</span><span class="n">memo</span><span class="p">[</span><span class="s1">&#39;tasks&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span></div>
+<span class="n">run_mapper</span><span class="o">.</span><span class="n">memo</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="exclusive"><a class="viewcode-back" href="../../datarake.html#datarake.worker.exclusive">[docs]</a><span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span> <span class="nf">exclusive</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;.lock&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;another process may be running&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s1">&#39;rm&#39;</span><span class="p">,</span> <span class="s1">&#39;-rf&#39;</span><span class="p">,</span> <span class="s1">&#39;.lock&#39;</span><span class="p">])</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DATARAKE_TRACE&#39;</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">trace</span>
+        <span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">Trace</span><span class="p">()</span>
+        <span class="n">tracer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;main()&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>

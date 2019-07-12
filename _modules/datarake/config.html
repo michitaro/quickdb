@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>datarake.config &#8212; quickdb  documentation</title>
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for datarake.config</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">socket</span>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># master_addr</span>
+<span class="c1"># </span>
+<span class="c1"># Workers allow access from only `master_addr`</span>
+<span class="c1">###############################################################################</span>
+<span class="n">master_addr</span> <span class="o">=</span> <span class="s1">&#39;192.168.0.100&#39;</span> <span class="c1"># socket.gethostbyname(&#39;quickdb-master.example.com&#39;)</span>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># workers</span>
+<span class="c1">#</span>
+<span class="c1"># Master scatters jobs over `workers`</span>
+<span class="c1">###############################################################################</span>
+<div class="viewcode-block" id="Worker"><a class="viewcode-back" href="../../datarake.html#datarake.config.Worker">[docs]</a><span class="k">class</span> <span class="nc">Worker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">work_dir</span><span class="p">,</span> <span class="n">python_path</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">2935</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">work_dir</span> <span class="o">=</span> <span class="n">work_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">python_path</span> <span class="o">=</span> <span class="n">python_path</span></div>
+
+<span class="n">user</span> <span class="o">=</span> <span class="s1">&#39;quickdb&#39;</span>
+<span class="n">work_dir</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;/home/</span><span class="si">{user}</span><span class="s1">/quickdb&#39;</span>
+<span class="n">python_path</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;/home/</span><span class="si">{user}</span><span class="s1">/anaconda3/bin/python&#39;</span>
+
+<span class="n">workers</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Worker</span><span class="p">(</span><span class="s1">&#39;quickdb-worker-1.example.com&#39;</span><span class="p">,</span> <span class="n">work_dir</span><span class="p">,</span> <span class="n">python_path</span><span class="p">),</span>
+    <span class="n">Worker</span><span class="p">(</span><span class="s1">&#39;quickdb-worker-2.example.com&#39;</span><span class="p">,</span> <span class="n">work_dir</span><span class="p">,</span> <span class="n">python_path</span><span class="p">),</span>
+    <span class="n">Worker</span><span class="p">(</span><span class="s1">&#39;quickdb-worker-3.example.com&#39;</span><span class="p">,</span> <span class="n">work_dir</span><span class="p">,</span> <span class="n">python_path</span><span class="p">),</span>
+    <span class="n">Worker</span><span class="p">(</span><span class="s1">&#39;quickdb-worker-3.example.com&#39;</span><span class="p">,</span> <span class="n">work_dir</span><span class="p">,</span> <span class="n">python_path</span><span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># tasks</span>
+<span class="c1">#</span>
+<span class="c1"># Each worker processes `tasks`.</span>
+<span class="c1"># `tasks` defines jobs a worker should process.</span>
+<span class="c1">###############################################################################</span>
+<span class="kn">from</span> <span class="nn">sspcatalog.table</span> <span class="k">import</span> <span class="n">Table</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="n">DEFAULT_RERUN</span> <span class="o">=</span> <span class="s1">&#39;pdr1_wide&#39;</span>
+
+<div class="viewcode-block" id="TaskCache"><a class="viewcode-back" href="../../datarake.html#datarake.config.TaskCache">[docs]</a><span class="k">class</span> <span class="nc">TaskCache</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="n">rerun</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rerun&#39;</span><span class="p">,</span> <span class="n">DEFAULT_RERUN</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rerun</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">rerun</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Table</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">patch_dir</span><span class="p">)</span> <span class="k">for</span> <span class="n">patch_dir</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{worker.work_dir}</span><span class="s1">/repo/</span><span class="si">{rerun}</span><span class="s1">/patches/*&#39;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">rerun</span><span class="p">]</span></div>
+
+
+<span class="n">tasks</span> <span class="o">=</span> <span class="n">TaskCache</span><span class="p">()</span>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># preload</span>
+<span class="c1">#</span>
+<span class="c1"># lines below are executed in both master and workers,</span>
+<span class="c1"># so we can put global settings here.</span>
+<span class="c1">###############################################################################</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">sql2mapreduce.nonaggr</span>
+
+<span class="n">numpy</span><span class="o">.</span><span class="n">seterr</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">quickdb  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
+    </div>
+  </body>
+</html>
