@@ -1,9 +1,1 @@
-__pycache__
-*.pyc
-.ipynb_checkpoints
-/datarake/config.py
-/webif/config.py
-/sphinx/_build
-/.vscode
-/docs
-/Pipfile.lock
+/sphinx
