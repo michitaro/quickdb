@@ -5,3 +5,6 @@ test:
 
 docs:
 	make -C sphinx html
+
+gh-pages:
+	bash ./tools/gh-pages.bash
