@@ -64,15 +64,27 @@ def deploy(worker, rerun, files, verbose):
 
 
 def batch(iterable, size):
-    # https://stackoverflow.com/a/8290514/2741327
+    '''
+    Returns iterator for each slice of `size` elements.
+    
+    Example: ::
+
+        >>> list(batch(range(10), 3))
+        [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+
+    See https://stackoverflow.com/a/8290514/2741327
+    '''
     from itertools import islice, chain
     sourceiter = iter(iterable)
+    t = 0
     while True:
         batchiter = islice(sourceiter, size)
-        try:
+        if t * size < len(iterable):
             yield list(chain([next(batchiter)], batchiter))
-        except StopIteration:
+            t = t + 1
+        else:
             return
+
 
 if __name__ == '__main__':
     main()
