@@ -37,6 +37,7 @@ The following instructions shoud be done on the master node.
     ```bash
     $ mkdir -p datarake/secrets
     $ openssl rand -hex 128 > datarake/secrets/password
+    $ chmod 600 datarake/secrets/password
     ```
 
 1. Make configurations for worker nodes.
