@@ -1,6 +1,11 @@
 sql2mapreduce package
 =====================
 
+.. automodule:: sql2mapreduce
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -51,11 +56,3 @@ sql2mapreduce.sqlast module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: sql2mapreduce
-   :members:
-   :undoc-members:
-   :show-inheritance:

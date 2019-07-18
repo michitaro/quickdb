@@ -1,6 +1,11 @@
 webif package
 =============
 
+.. automodule:: webif
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -36,11 +41,3 @@ webif.server module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: webif
-   :members:
-   :undoc-members:
-   :show-inheritance:

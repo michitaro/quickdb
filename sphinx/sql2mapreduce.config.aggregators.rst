@@ -1,6 +1,11 @@
 sql2mapreduce.config.aggregators package
 ========================================
 
+.. automodule:: sql2mapreduce.config.aggregators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -52,11 +57,3 @@ sql2mapreduce.config.aggregators.pickone module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: sql2mapreduce.config.aggregators
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,6 +1,11 @@
 sspcatalog package
 ==================
 
+.. automodule:: sspcatalog
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -16,6 +21,14 @@ sspcatalog.deploy module
 ------------------------
 
 .. automodule:: sspcatalog.deploy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+sspcatalog.deploy\_test module
+------------------------------
+
+.. automodule:: sspcatalog.deploy_test
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,11 +65,3 @@ sspcatalog.table module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: sspcatalog
-   :members:
-   :undoc-members:
-   :show-inheritance:

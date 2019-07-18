@@ -1,6 +1,11 @@
 sql2mapreduce.config package
 ============================
 
+.. automodule:: sql2mapreduce.config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -35,11 +40,3 @@ sql2mapreduce.config.sqlfuncs module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: sql2mapreduce.config
-   :members:
-   :undoc-members:
-   :show-inheritance:
