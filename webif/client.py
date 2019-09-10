@@ -23,6 +23,10 @@ def post_sql(sql, shared={}):
     return response
 
 
-def dataframe(sql, shared={}):
+def dataframe(sql, shared={}, time=False):
     import pandas
-    return pandas.DataFrame.from_dict(OrderedDict(post_sql(sql, shared=shared)['result']))
+    from pprint import pprint
+    res = post_sql(sql, shared=shared)
+    if time:
+        pprint(res['time'])
+    return pandas.DataFrame.from_dict(OrderedDict(res['result']))
