@@ -28,7 +28,7 @@ The following instructions shoud be done on the master node.
     ```bash
     $ mkdir -p ~/quickdb/python_path
     $ cd ~/quickdb/python_path
-    $ git clone git@github.com:michitaro/quickdb.git
+    $ git clone git@github.com:michitaro/quickdb.git .
     ```
 
 1. Generate password
@@ -57,10 +57,9 @@ The following instructions shoud be done on each worker node.
     * We recommend using [Anaconda](https://anaconda.org).
     * Python will be installed in `/home/quickdb/anaconda3` when using Anaconda.
 
-1. Check out `quickdb`
+1. Make work directory
     ```bash
     $ mkdir -p ~/quickdb/python_path
-    $ git clone git@github.com:michitaro/quickdb.git
     ```
 
 1. Make sure that port 2935 can be accessed from the outside.
@@ -77,7 +76,7 @@ The following instructions shoud be done on the master node.
 
 1. Confirm that the password file is transferred to the worker node.
     ```bash
-    $ python -m datarake.batch ls -l python_path/datarake/secrets
+    $ python -m datarake.batch -- ls -l python_path/datarake/secrets
     ```
 
 1. Start a worker process
