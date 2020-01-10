@@ -4,6 +4,7 @@ import subprocess
 import glob
 import logging ; logging.basicConfig(level=logging.INFO)
 import os
+import multiprocessing
 import itertools
 
 
@@ -19,6 +20,7 @@ def main():
     n_workers = len(config.workers)
 
     allPatches = glob.glob(f'{args.data}/patches/*')
+    processes = []
     for i, worker in enumerate(config.workers):
         logging.info(f' ==== {worker.host} ====')
         subprocess.check_call([
@@ -29,16 +31,30 @@ def main():
         s = len(allPatches) * i // n_workers
         e = len(allPatches) * (i + 1) // n_workers
         files = allPatches[s:e]
-        deploy(worker, args.rerun, files, args.verbose)
+        p = multiprocessing.Process(target=deploy, args=(worker, args.rerun, files, args.verbose))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
 
 
+
+# files_to_deploy = '''
+#     *.pickle id.npy coord.npy flags-*.npy
+#     cmodel_flux.npy cmodel_flux_err.npy flux_sinc.npy flux_sinc_err.npy
+#     classification_extendedness.npy
+#     shape_sdss*.npy
+#     variance
+# '''.split()
 
 files_to_deploy = '''
-    *.pickle id.npy coord.npy flags-*.npy
-    cmodel_flux.npy cmodel_flux_err.npy flux_sinc.npy flux_sinc_err.npy
-    classification_extendedness.npy
-    shape_sdss*.npy
-    variance
+    *.pickle object_id.npy parent_id.npy flags-*.npy
+    universal/* position/*
+    psfflux_flux.npy psfflux_fluxsigma.npy
+    kronflux_flux.npy kronflux_fluxsigma.npy cmodel_flux.npy cmodel_fluxsigma.npy
+    extendedness_value.npy
+    sdssshape*.npy
 '''.split()
 
 
