@@ -18,6 +18,10 @@ from . import config
 from .timer import Timer
 
 
+class WorkerServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+
 g_worker_process = None
 g_debug = False
 
@@ -38,8 +42,7 @@ def main():
         with open(args.pid_file, 'w') as f:
             f.write(f'{os.getpid()}')
         try:
-            socketserver.TCPServer.allow_reuse_address = True
-            with socketserver.TCPServer((args.host, args.port), Handler) as server:
+            with WorkerServer((args.host, args.port), Handler) as server:
                 th = None
                 def shutdown_server(): server.shutdown()
                 def on_sigterm(*args):
