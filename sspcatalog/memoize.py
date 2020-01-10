@@ -29,11 +29,3 @@ class cached_property(object):
             return self
         value = obj.__dict__[self.func.__name__] = self.func.__get__(obj, klass)()
         return value
-
-
-if False:
-    def memoize(f):
-        return f
-
-    def cached_property(f):
-        property(f)
