@@ -48,7 +48,7 @@ def exec_sql(sql, shared={}, time=None):
 
 def exec_nonaggr_sql(sql, context, time):
     make_env, target_names = sql2mapreduce.nonaggr.sql2make_env(sql)
-    return datarake.master.run(make_env, context, time)
+    return datarake.master.run(make_env, context, time), target_names
 
 
 def exec_aggr_call(sql, context, times={}):
