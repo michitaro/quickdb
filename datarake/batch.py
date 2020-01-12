@@ -59,7 +59,7 @@ def ssh(cmd_function):
 
 def update_code1(worker):
     subprocess.check_call([
-        'rsync', '-av', '--delete', f'{os.path.dirname(os.path.realpath(__file__))}/../',
+        'rsync', '-av', '--delete', '--exclude', 'repobuilder', f'{os.path.dirname(os.path.realpath(__file__))}/../',
         '-m', f'{worker.host}:{worker.work_dir}/python_path',
     ])
 
