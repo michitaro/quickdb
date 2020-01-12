@@ -177,6 +177,16 @@ The following instructions should be done on your laptop.
     jupyter lab ./sample.ipynb
     ```
 
+### Upgrade Codes
+
+To upgrade codes, run the following command on the master node.
+```bash
+$ cd ~/quickdb/python_path
+$ git fetch origin
+$ git reset --hard
+$ python -m datarake.batch --update-code
+```
+
 ### Building Sphinx Docs
 ```
 make docs
