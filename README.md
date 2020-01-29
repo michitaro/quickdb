@@ -71,19 +71,19 @@ The following instructions shoud be done on the master node.
 1. Transfer password file and configuration file.
     ```bash
     $ cd ~/quickdb/python_path
-    $ python -m datarake.batch --update-code
+    $ python -m quickdb.datarake.batch --update-code
     ```
 
 1. Confirm that the password file is transferred to the worker node.
     ```bash
-    $ python -m datarake.batch -- ls -l python_path/datarake/secrets
+    $ python -m quickdb.datarake.batch -- ls -l python_path/datarake/secrets
     ```
 
 1. Start a worker process
     ```bash
-    $ python -m datarake.workerctrl start
+    $ python -m quickdb.datarake.workerctrl start
     # wait a few seconds
-    $ python -m datarake.workerctrl status
+    $ python -m quickdb.datarake.workerctrl status
     # You will see outputs something like this
     {'quickdb-worker-1.example.com': '1140'}
     {'quickdb-worker-2.example.com': '3429'}
@@ -105,9 +105,9 @@ The following instructions shoud be done on the master node.
 1. Stop the worker process
     * Before distributing the data, stop the worker processes.
     ```bash
-    $ python -m datarake.workerctrl stop
+    $ python -m quickdb.datarake.workerctrl stop
     # wait a few seconds
-    $ python -m datarake.workerctrl status
+    $ python -m quickdb.datarake.workerctrl status
     # You will see outputs something like this
     {'quickdb-worker-1.example.com': ''}
     {'quickdb-worker-2.example.com': ''}
@@ -128,9 +128,9 @@ The following instructions shoud be done on the master node.
 
 1. Start worker processes
     ```bash
-    $ python -m datarake.workerctrl start
+    $ python -m quickdb.datarake.workerctrl start
     # wait a few seconds
-    $ python -m datarake.workerctrl status
+    $ python -m quickdb.datarake.workerctrl status
     # You will see outputs something like this
     {'quickdb-worker-1.example.com': '1140'}
     {'quickdb-worker-2.example.com': '3429'}
@@ -141,7 +141,7 @@ The following instructions shoud be done on the master node.
 1. Test scattering `mapper` and `reducer` to workers
     * This is equivalent to `SELECT COUNT(*) FROM $DEFAULT_RERUN`.
     ```bash
-    $ python -m datarake.master
+    $ python -m quickdb.datarake.master
     5073357
     ```
 
@@ -184,7 +184,7 @@ To upgrade codes, run the following command on the master node.
 $ cd ~/quickdb/python_path
 $ git fetch origin
 $ git reset --hard
-$ python -m datarake.batch --update-code
+$ python -m quickdb.datarake.batch --update-code
 ```
 
 ### Building Sphinx Docs

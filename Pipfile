@@ -8,12 +8,13 @@ sphinx = "*"
 pylint = "*"
 autopep8 = "*"
 coverage = "*"
+ipdb = "*"
 
 [packages]
-pg-query = "*"
 numpy = "*"
 scipy = "*"
 astropy = "*"
+pglast = "*"
 
 [requires]
 python_version = "3.7"
