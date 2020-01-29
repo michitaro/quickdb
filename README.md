@@ -187,7 +187,16 @@ $ git reset --hard
 $ python -m quickdb.datarake.batch --update-code
 ```
 
-### Building Sphinx Docs
+
+### Unit tests
+Unit tests are also available. These tests can be run on single node. The node must have data repository of `pdr2_dud` to run the tests. Set `REPO_DIR` in `quickdb/test_config.py` to point to the directory including `pdr2_dud`.
+
+```bash
+pipenv install
+make test # or make coverage
+```
+
+### ~~Building Sphinx Docs~~
 ```
 make docs
 open sphix/_build/html/index.html
