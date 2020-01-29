@@ -78,7 +78,7 @@ def run_agg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None,
             cls = cast(Type[AggCall], agg_functions[e.funcname]) # due to pyright's bug, we need cast
             a = cls(e.args, e.named_args)
             aggs.append((e, a))
-            walk_subargs(a, lambda sa: aggs.append((None, sa)))
+            walk_subaggrs(a, lambda sa: aggs.append((None, sa)))
 
     for target in select.target_list:
         target.val.walk(pick_aggs)
@@ -114,7 +114,7 @@ def check_select(select: Select):  # pragma: no cover
         raise SqlError('OFFSET is not supported')
 
 
-def walk_subargs(a: AggCall, f: Callable[[AggCall], None]):
+def walk_subaggrs(a: AggCall, f: Callable[[AggCall], None]):
     q = a.subaggrs
     while len(q) > 0:
         a = q.pop(0)
