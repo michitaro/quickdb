@@ -189,7 +189,7 @@ $ python -m quickdb.datarake.batch --update-code
 
 
 ### Unit tests
-Unit tests are also available. These tests can be run on single node. The node must have data repository of `pdr2_dud` to run the tests. Set `REPO_DIR` in `quickdb/test_config.py` to point to the directory including `pdr2_dud`.
+Unit tests are also available. These tests can be run on a single node. The node must have data repository of `pdr2_dud` to run the tests. Set `REPO_DIR` in `quickdb/test_config.py` to point to the directory including `pdr2_dud`.
 
 ```bash
 pipenv install
