@@ -1,6 +1,7 @@
 import os
 import hashlib
 import functools
+from quickdb.utils.cached_property import cached_property
 import textwrap
 
 
@@ -10,12 +11,12 @@ def hash(value):
     return bytes(m.hexdigest(), 'utf-8')
 
 
-def evaluate(pycode, context=None):
-    if context is None:
-        context = {}
+def evaluate(pycode, shared=None):
+    if shared is None:
+        shared = {}
     pycode = textwrap.dedent(pycode)
-    exec(pycode, context)
-    return context
+    exec(pycode, shared)
+    return shared
 
 
 def reduce(reducer, values, initial):
@@ -24,19 +25,8 @@ def reduce(reducer, values, initial):
     else:
         return functools.reduce(reducer, values, initial)
 
-
-def load_file(fname):
-    import importlib.util
-    import uuid
-    spec = importlib.util.spec_from_file_location(f'm{uuid.uuid1().hex}', fname)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 class Keychain:
-    @property
-    @functools.lru_cache(None)
+    @cached_property
     def password(self):
         password_path = f'{os.path.dirname(__file__)}/secrets/password'
         assert os.stat(password_path).st_mode & 0o077 == 0

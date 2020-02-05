@@ -1,0 +1,84 @@
+import numpy
+from sspcatalog.patch import Rerun
+import subprocess
+from functools import lru_cache
+
+
+###############################################################################
+# master_addr
+#
+# Workers allow access from only `master_addr`
+###############################################################################
+master_addr = '133.40.210.189'  # socket.gethostbyname('quickdb-master.example.com')
+
+
+###############################################################################
+# workers
+#
+# Master scatters jobs over `workers`
+###############################################################################
+class Worker:
+    def __init__(self, host, hostname, work_dir, python_path, port=2935):
+        '''
+        Holds settings for a worker node.
+
+        Args:
+            host (str): Host address used to connect
+            hostname: Result of `hostname` command on the worker.
+                      This will be used to determine `this_worker`
+            work_dir: Work directory on the worker node.
+                      Data directory will be placed here.
+            python_path: Python binary path.
+            port: Worker process will wait for a connection from master on this port.
+        '''
+        self.host = host
+        self.hostname = hostname
+        self.port = port
+        self.work_dir = work_dir
+        self.python_path = python_path
+
+
+user = 'michitaro'
+work_dir = f'/db1/koike/quickdb-pdr2'
+python_path = f'/home/{user}/anaconda3/bin/python'
+
+workers = [
+    Worker('hdr-db05', 'hdr-db05', work_dir, python_path),
+    Worker('hdr-db06', 'hdr-db06', work_dir, python_path),
+    Worker('hdr-db07', 'hdr-db07', work_dir, python_path),
+    Worker('hdr-db08', 'hdr-db08', work_dir, python_path),
+    Worker('hdr-db09', 'hdr-db09', work_dir, python_path),
+    Worker('hdr-db10', 'hdr-db10', work_dir, python_path),
+    Worker('hdr-db11', 'hdr-db11', work_dir, python_path),
+    Worker('hdr-db12', 'hdr-db12', work_dir, python_path),
+]
+
+this_worker: Worker = {worker.hostname: worker for worker in workers}.get(subprocess.check_output(['hostname']).strip()) # type: ignore
+
+
+###############################################################################
+# tasks
+#
+# Each worker processes `tasks`.
+# `tasks` defines jobs a worker should process.
+###############################################################################
+
+@lru_cache(maxsize=None)
+def cached_rerun(rerun_name: str):
+    return Rerun(f'{this_worker.work_dir}/repo/{rerun_name}')
+
+
+def tasks(env):
+    rerun = cached_rerun(env.get('rerun'))
+    return rerun.patches
+
+
+###############################################################################
+# preload
+#
+# lines below are executed in both master and workers,
+# so we can put global settings here.
+###############################################################################
+
+
+numpy.seterr(all='ignore')

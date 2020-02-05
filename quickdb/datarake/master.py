@@ -2,15 +2,18 @@ import concurrent.futures
 import logging
 import pickle
 import socket
+from typing import Dict
+
+from quickdb.sql2mapreduce import ProgressCB
 
 from . import config, utils
 
 
-def run(make_env, context=None, time=None):
-    context = {} if context is None else context
-    mapped_values = scatter(make_env, context)
-    env = utils.evaluate(make_env, dict(context))  # we need to copy context because of lazy evaluation of scatter
-    result = utils.reduce(env['reducer'], pick_result(mapped_values, time), env.get('initial'))
+def run_make_env(make_env: str, shared: Dict = None, progress: ProgressCB = None):
+    shared = {} if shared is None else shared
+    mapped_values = scatter(make_env, shared)
+    env = utils.evaluate(make_env, dict(shared))  # we need to copy context because of lazy evaluation of scatter
+    result = utils.reduce(env['reducer'], pick_result(mapped_values, None), env.get('initial'))
     return result
 
 
@@ -62,10 +65,6 @@ def post_request(worker, make_env, context):
         raise
 
 
-def cat_n(text):
-    return '\n'.join(f'{i + 1:02d} {line}' for i, line in enumerate(text.split('\n')))
-
-
 if __name__ == '__main__':
     make_env = '''
         rerun = 'pdr2_dud'
@@ -77,4 +76,4 @@ if __name__ == '__main__':
             return acc + val
     '''
 
-    print(run(make_env))
+    print(run_make_env(make_env))

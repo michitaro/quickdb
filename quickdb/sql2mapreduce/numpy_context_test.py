@@ -6,7 +6,7 @@ from functools import lru_cache
 
 import numpy
 
-from quickdb.sql2mapreduce.sqlast.sqlast import Select, expression_class
+from quickdb.sql2mapreduce.sqlast.sqlast import ColumnRefExpression, Select
 
 from quickdb.sspcatalog.patch import Rerun
 from .numpy_context import NumpyContext
@@ -18,15 +18,20 @@ class TestNumpyContext(unittest.TestCase):
         context = NumpyContext(self.patch)
         e = sql2expression('object_id')
         self.assertTrue(array_equal(
-            e.evaluate(context),
+            e(context),
             self.patch('object_id'),
         ))
+
+    def test_shared_value_ref(self):
+        context = NumpyContext(self.patch, shared={'the_answer': 42})
+        e = sql2expression('shared.the_answer + 1')
+        self.assertEqual(e(context), 43)
 
     def test_binary_operator(self):
         context = NumpyContext(self.patch)
         e = sql2expression('2 * (object_id + object_id) + 1')
         self.assertTrue(array_equal(
-            e.evaluate(context),
+            e(context),
             4 * self.patch('object_id') + 1,
         ))
 
@@ -34,44 +39,72 @@ class TestNumpyContext(unittest.TestCase):
         context = NumpyContext(self.patch)
         e = sql2expression('- object_id')
         self.assertTrue(array_equal(
-            e.evaluate(context),
+            e(context),
             - self.patch('object_id'),
+        ))
+        e = sql2expression('+ object_id')
+        self.assertTrue(array_equal(
+            e(context),
+            self.patch('object_id'),
         ))
 
     def test_between(self):
         object_id = self.patch('object_id')
         min = numpy.percentile(object_id, 0.2)
         max = numpy.percentile(object_id, 0.8)
+
         e = sql2expression(f'object_id BETWEEN {min} AND {max}')
-        a = self.patch('object_id')[e.evaluate(NumpyContext(self.patch))]
+        a = self.patch('object_id')[e(NumpyContext(self.patch))]
         self.assertTrue(numpy.logical_and(min <= a, a <= max).all())
+
+        e = sql2expression(f'object_id NOT BETWEEN {min} AND {max}')
+        a = self.patch('object_id')[e(NumpyContext(self.patch))]
+        self.assertTrue(numpy.logical_or(min > a, a > max).all())
 
     def test_boolean_operation(self):
         class TestContext(NumpyContext):
-            def columnref(self, ref: Tuple[str, ...]):
+            def evaluate_ColumnRefExpression(self, e: ColumnRefExpression):
+                fields = e.fields
                 a = numpy.arange(10)
-                if ref[0] == 'even':
+                if fields[0] == 'even':
                     return a % 2 == 0
-                elif ref[0] == 'odd':
+                elif fields[0] == 'odd':
                     return a % 2 == 1
+                elif fields[0] == 'mod3':
+                    return a % 3
         context = TestContext(self.patch)
-        even = sql2expression('even').evaluate(context)
+        even = sql2expression('even')(context)
         self.assertTrue((even == numpy.array([b == 't' for b in 'tftftftftf'])).all())
 
         e = sql2expression('even AND odd')
-        self.assertTrue((e.evaluate(context) == False).all())
+        self.assertTrue((e(context) == False).all())
 
         e = sql2expression('even OR odd')
-        self.assertTrue((e.evaluate(context) == True).all())
+        self.assertTrue((e(context) == True).all())
 
         e = sql2expression('NOT even')
-        self.assertTrue((e.evaluate(context) == numpy.array([b == 't' for b in 'ftftftftft'])).all())
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'ftftftftft'])).all())
+
+        e = sql2expression('mod3 = 1')
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'ftfftfftff'])).all())
+
+        e = sql2expression('mod3 = 1 OR mod3 = 2')
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'fttfttfttf'])).all())
+
+        e = sql2expression('mod3 = 1 OR mod3 = 2 OR mod3 = 0')
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'tttttttttt'])).all())
+
+        e = sql2expression('NOT (mod3 = 0) AND NOT (mod3 = 1)')
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'fftfftfftf'])).all())
+
+        e = sql2expression('NOT (mod3 = 0) AND NOT (mod3 = 1) AND NOT (mod3 = 2)')
+        self.assertTrue((e(context) == numpy.array([b == 't' for b in 'ffffffffff'])).all())
 
     def test_funccall(self):
         e = sql2expression(''' flux2mag(forced.i.psfflux_flux) ''')
         context = NumpyContext(self.patch)
         self.assertTrue(array_equal(
-            e.evaluate(context),
+            e(context),
             57.543993733715695 * self.patch('forced.i.psfflux_flux'),
         ))
 
@@ -79,9 +112,14 @@ class TestNumpyContext(unittest.TestCase):
         context = NumpyContext(self.patch)
         e = sql2expression('forced.coord[2]')
         self.assertTrue(array_equal(
-            e.evaluate(context),
+            e(context),
             self.patch('forced.coord')[2],  # type: ignore
         ))
+
+    def test_row(self):
+        context = NumpyContext(self.patch)
+        e = sql2expression('(1, 2)')
+        self.assertEqual( e(context), [1,2] )
 
     @property
     def patch(self):

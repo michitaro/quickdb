@@ -1,0 +1,46 @@
+from quickdb.sql2mapreduce.agg_functions import agg_functions
+from quickdb.sql2mapreduce.nonagg import run_nonagg_query
+from quickdb.sql2mapreduce.agg import run_agg_query
+from quickdb.sql2mapreduce.sqlast.sqlast import Expression, FuncCallExpression, Select
+from quickdb.sql2mapreduce.interface import ProgressCB, RunMakeEnv
+from typing import Dict, List, NamedTuple
+
+
+class QueryResult(NamedTuple):
+    target_names: List[str]
+    target_list: List
+
+
+def run_sql(sql: str, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None):
+    select = Select(sql)
+    if is_agg_query(select):
+        result = run_agg_query(select, run_make_env, shared, progress)
+        group_values = []
+        target_list = [[] for i in result.target_names]
+        for gv, t in result.group_by.items():
+            group_values.append(gv)
+            for i, c in enumerate(t):
+                target_list[i].append(c)
+        return QueryResult(
+            ['$group_by'] + result.target_names,
+            [group_values] + target_list,
+        )
+    else:
+        result = run_nonagg_query(select, run_make_env, shared, progress)
+        return QueryResult(
+            result.target_names,
+            result.target_list,
+        )
+
+
+def is_agg_query(select: Select):
+    aggs: List[Expression] = []
+
+    def probe(e: Expression):
+        if isinstance(e, FuncCallExpression) and e.name in agg_functions:
+            aggs.append(e)
+
+    for target in select.target_list:
+        target.val.walk(probe)
+
+    return len(aggs) > 0

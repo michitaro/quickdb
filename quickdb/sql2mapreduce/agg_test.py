@@ -17,11 +17,11 @@ class TestRunAggQuery(unittest.TestCase):
         sql = '''
             SELECT COUNT(*) as count FROM pdr2_dud
         '''
-        result = run_sql(sql)
+        result = run_test_agg_sql(sql)
         count = 0
         for patch in patches('pdr2_dud'):
             count += patch.size
-        self.assertEqual(count, result.target_list[None][0])
+        self.assertEqual(count, result.group_by[None][0])
         self.assertEqual('count', result.target_names[0])
 
     def test_count_group(self):
@@ -29,14 +29,14 @@ class TestRunAggQuery(unittest.TestCase):
             SELECT COUNT(*) FROM pdr2_dud
             GROUP BY forced.i.extendedness_value < 0.5
         '''
-        result = run_sql(sql)
+        result = run_test_agg_sql(sql)
         count_true = 0
         count_false = 0
         for patch in patches('pdr2_dud'):
             count_true += (patch('forced.i.extendedness_value') < 0.5).sum()
             count_false += numpy.logical_not(patch('forced.i.extendedness_value') < 0.5).sum()
-        self.assertEqual(count_true, result.target_list[(True,)][0])
-        self.assertEqual(count_false, result.target_list[(False,)][0])
+        self.assertEqual(count_true, result.group_by[(True,)][0])
+        self.assertEqual(count_false, result.group_by[(False,)][0])
 
     def test_count_nested_group(self):
         sql = '''
@@ -45,11 +45,11 @@ class TestRunAggQuery(unittest.TestCase):
                 object_id % 2,
                 forced.i.extendedness_value < 0.5
         '''
-        result = run_sql(sql)
+        result = run_test_agg_sql(sql)
         count = 0
         for patch in patches('pdr2_dud'):
             count += patch.size
-        for l in result.target_list.values():
+        for l in result.group_by.values():
             count -= l[0]
         self.assertEqual(count, 0)
 
@@ -65,31 +65,63 @@ class TestRunAggQuery(unittest.TestCase):
                 object_id % 2,
                 forced.i.extendedness_value < 0.5
         '''
-        result = run_sql(sql)
+        result = run_test_agg_sql(sql)
         count = 0
         for patch in patches('pdr2_dud'):
             count += (patch('object_id') % 3 == 0).sum()
-        for l in result.target_list.values():
+        for l in result.group_by.values():
             count -= l[0]
         self.assertEqual(count, 0)
 
+    def test_evaluation_of_agg_results(self):
+        sql = '''
+            SELECT 2 * COUNT(*) FROM pdr2_dud
+        '''
+        result = run_test_agg_sql(sql)
+        count = 0
+        for patch in patches('pdr2_dud'):
+            count += patch.size
+        self.assertEqual(2 * count, result.group_by[None][0])
 
-def run_sql(sql: str, context: Dict = {}):
+    def test_context_dependent(self):
+        sql = '''
+            SELECT
+                (object_id % 2 + 1) * 2
+            FROM pdr2_dud
+            GROUP BY
+                object_id % 2
+        '''
+        result = run_test_agg_sql(sql)
+        self.assertEqual(result.group_by[(0,)], [2])
+        self.assertEqual(result.group_by[(1,)], [4])
+
+    def test_shared(self):
+        sql = '''
+            SELECT
+                COUNT(*), shared.message
+            FROM
+                pdr2_dud
+        '''
+        result = run_test_agg_sql(sql, shared={'message': 'Hello world'})
+        self.assertEqual(result.group_by[None][1], 'Hello world')
+
+
+def run_test_agg_sql(sql: str, shared: Dict = None):
     select = Select(sql)
-    return run_agg_query(select, run_make_env)
+    return run_agg_query(select, run_make_env, shared=shared)
 
 
 @lru_cache()
 def patches(rerun_name: str):
     from quickdb.sspcatalog.patch import Rerun
-    return Rerun(f'{REPO_DIR}/{rerun_name}').patches[:100]
+    return Rerun(f'{REPO_DIR}/{rerun_name}').patches[:10]
 
 
-def run_make_env(make_env: str, context: Dict, progress=None):
+def run_make_env(make_env: str, shared: Dict, progress=None):
     from quickdb.datarake.utils import evaluate
     from functools import reduce
-    context = through_serialization(context)
-    env = evaluate(make_env, context)
+    shared = through_serialization(shared)
+    env = evaluate(make_env, shared)
     return env['finalizer'](reduce(env['reducer'], map(env['mapper'], patches(env['rerun']))))
 
 

@@ -2,14 +2,11 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import numpy
 
+from quickdb.sql2mapreduce.interface import ProgressCB, RunMakeEnv
 from quickdb.sql2mapreduce.sqlast.sqlast import Select, SqlError
 
 from ..sspcatalog.patch import Patch
 from .numpy_context import NumpyContext
-
-
-RunMakeEnv = Callable[[str, Dict, Optional[Callable[[float], None]]], Any]
-ProgressCB = Callable[[float], None]
 
 
 class NonAggQueryResult(NamedTuple):
@@ -31,8 +28,8 @@ def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = No
         from quickdb.sql2mapreduce.nonagg import nonagg_env
         rerun, mapper, reducer, finalizer = nonagg_env(select, shared)
     '''
-    shared = {'select': select, 'shared': ({} if shared is None else shared)}
-    target_list = run_make_env(make_env, shared, progress)
+    env_context = {'select': select, 'shared': shared}
+    target_list = run_make_env(make_env, env_context, progress)
 
     return NonAggQueryResult(
         target_list,
@@ -44,19 +41,19 @@ def nonagg_env(select: Select, shared: Dict):
     rerun = select.from_clause.relname
 
     def mapper(patch: Patch):
-        context = NumpyContext(patch)
+        context = NumpyContext(patch, shared=shared)
         sort_values: Optional[List[numpy.ndarray]]
         if select.where_clause:
-            context = context.sliced_context(select.where_clause.evaluate(context)[:select.limit_count])
+            context = context.sliced_context(select.where_clause(context)[:select.limit_count])
         if select.sort_clause:
             # TODO: use numpy.partition when len(sort_clause) == 1
-            sort_values = [(-1 if sc.reverse else +1) * sc.node.evaluate(context) for sc in select.sort_clause]
+            sort_values = [(-1 if sc.reverse else +1) * sc.node(context) for sc in select.sort_clause]
             sort_indices = numpy.lexsort(sort_values[::-1])[:select.limit_count]
             sort_values = [sv[sort_indices] for sv in sort_values]
             context = context.sliced_context(sort_indices)
         else:
             sort_values = None
-        target_list: List[numpy.ndarray] = [t.val.evaluate(context) for t in select.target_list]
+        target_list: List[numpy.ndarray] = [t.val(context) for t in select.target_list]
         return MapperResult(
             target_list,
             sort_values,

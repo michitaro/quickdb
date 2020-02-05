@@ -1,47 +1,25 @@
 # See https://github.com/postgres/postgres/blob/master/src/include/nodes/parsenodes.h
+from abc import ABCMeta, abstractmethod
 from itertools import chain
 from pprint import pprint
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, TypeVar, Union, cast)
 
-import numpy
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Type, TypeVar, Union, cast
 
 from ...utils.cached_property import cached_property
+from .constants import constants
+
+
+def parse_sql(sql: str):
+    from pglast import parse_sql
+    from pglast.parser import ParseError  # pylint: disable=no-name-in-module
+    try:
+        return parse_sql(sql)
+    except ParseError as error:  # pragma: no cover
+        raise SqlError(str(error))
 
 
 class SqlError(RuntimeError):
     pass
-
-
-class Context:
-    '''
-    A Context object gives bindings to Expression ASTs of Select object when they are evaluated.
-    e.g. which file should be bound to columnref ('forced', 'i', 'psfflux_flux').
-    '''
-
-    def columnref(self, ref: Tuple[str, ...]):
-        raise NotImplementedError(f'{self.__class__}.columnref must be implemented')  # pragma: no cover
-
-    def binary_operation(self, name: str, left, right):
-        raise NotImplementedError(f'{self.__class__}.binary_operation must be implemented')  # pragma: no cover
-
-    def unary_operation(self, name: str, right):
-        raise NotImplementedError(f'{self.__class__}.unary_operation must be implemented')  # pragma: no cover
-
-    def between(self, a, b, c):
-        raise NotImplementedError(f'{self.__class__}.between must be implemented')  # pragma: no cover
-
-    def boolean_operation(self, op: str, args: List):
-        raise NotImplementedError(f'{self.__class__}.boolop must be implemented')  # pragma: no cover
-
-    def funccall(self, name: Tuple[str, ...], args: List, named_args: Dict, agg_star: bool, expression: 'Expression'):
-        raise NotImplementedError(f'{self.__class__}.funccall must be implemented')  # pragma: no cover
-
-    def indirection(self, arg, index: int):
-        raise NotImplementedError(f'{self.__class__}.indirection must be implemented')  # pragma: no cover
-
-    def sliced_context(self, slice: Union[slice, numpy.ndarray]) -> 'Context':
-        raise NotImplementedError(f'{self.__class__}.sliced_context must be implemented')  # pragma: no cover
 
 
 class Select:
@@ -108,7 +86,7 @@ class Select:
             limitCount = self._meta.a.pop('limitCount')
             if 'A_Const' not in limitCount:
                 raise SqlError('Limit count must be an integer')  # pragma: no cover
-            val = A_Const(limitCount.pop('A_Const')).val
+            val = A_Const(limitCount.pop('A_Const')).value
             if not isinstance(val, int):
                 raise SqlError('Limit count must be an integer')  # pragma: no cover
             return val
@@ -119,7 +97,7 @@ class Select:
             limitOffset = self._meta.a.pop('limitOffset')
             if 'A_Const' not in limitOffset:
                 raise SqlError('Limit count must be an integer')  # pragma: no cover
-            val = A_Const(limitOffset.pop('A_Const')).val
+            val = A_Const(limitOffset.pop('A_Const')).value
             if not isinstance(val, int):
                 raise SqlError('Limit offset must be an integer')  # pragma: no cover
             return val
@@ -178,274 +156,331 @@ class RangeVar:
             return alias['Alias']['aliasname']
 
 
-class Expression:
-    '''
-    Represents an expression ast
-    '''
-
-    def __init__(self, a):
-        raise RuntimeError(f'{self.__class__.__name__}.__init__ must be implemented: a={a}')  # pragma: no cover
-
-    def evaluate(self, context: Context) -> ...:
-        raise RuntimeError(f'{self.__class__.__name__}.evaluate must be implemented')  # pragma: no cover
-
-    def walk(self, cb: Callable[['Expression'], None]):
-        '''
-        Walk ast tree leaf first
-        '''
-        for child in self._children():
-            child.walk(cb)
-        cb(self)
-
-    def _children(self) -> Iterable['Expression']:
-        raise NotImplementedError(f'{self.__class__}._children must be implemented')  # pragma: no cover
-
-    @staticmethod
-    def from_rawast(rawast) -> 'Expression':
-        meta = extract_meta(rawast)
-        cls = expression_classes[meta.typename]
-        return cls(meta.a)
-
-    @property
-    def location(self) -> int:
-        if hasattr(self, '_location'):
-            return cast(Any, self)._location  # pylint: disable=no-member
-        return -1
-
-
-expression_classes: Dict = {}
-
-
 T = TypeVar('T')
 
 
+class Context:
+    @staticmethod
+    def implementation(ContextFactory: T) -> T:
+        for cls in expresison_classes.values():
+            assert cls.evaluator_name in dir(ContextFactory), f'{ContextFactory.__name__}.{cls.evaluator_name} must be implemented.'  # type: ignore
+        return ContextFactory
+
+
+class Expression(metaclass=ABCMeta):
+    def evaluate(self, context: Context):
+        # pylint: disable=no-member
+        return getattr(context, self.__class__.evaluator_name)(self)  # type: ignore
+
+    def __call__(self, context: Context):
+        return self.evaluate(context)
+
+    @classmethod
+    def from_rawast(cls, rawast) -> 'Expression':
+        meta = extract_meta(rawast)
+        if meta.typename not in pg_nodes:  # pragma: no cover
+            raise RuntimeError(f'Unknwon pg_node: {meta.typename}. {rawast}')
+        cls = pg_nodes[meta.typename]
+        return cls(meta.a)
+
+    @abstractmethod
+    def _children(self) -> Iterable['Expression']:  # pragma: no cover
+        ...
+
+    def walk(self, cb: Callable[['Expression'], None], break_if: Callable[['Expression'], bool] = None):
+        '''
+        Walk ast tree leaf first
+        '''
+        if not (break_if and break_if(self)):
+            for child in self._children():
+                child.walk(cb, break_if)
+        cb(self)
+
+    @abstractmethod
+    def __repr__(self) -> str:  # pragma: no cover
+        ...
+
+
+pg_nodes: Dict[str, Callable] = {}
+expresison_classes: Dict[str, Type[Expression]] = {}
+
+
+def pg_node(factory: T) -> T:
+    pg_nodes[factory.__name__] = factory
+    return factory
+
+
 def expression_class(cls: T) -> T:
-    expression_classes[cls.__name__] = cls
+    expresison_classes[cls.__name__] = cls
+    cls.evaluator_name = f'evaluate_{cls.__name__}'
     return cls
 
 
 @expression_class
-class A_Const(Expression):
-    def __init__(self, a):
-        meta = extract_meta(a['val'])
-        self.typename = meta.typename
-        if meta.typename == 'String':
-            self.val = meta.a['str']
-        elif meta.typename == 'Float':
-            self.val = float(meta.a['str'])
-        elif meta.typename == 'Integer':
-            self.val = meta.a['ival']
-        else:
-            raise SqlError(f'Unknwon A_Const type: {meta.typename}, a={a}')  # pragma: no cover
-
-    def evaluate(self, context: Context):
-        return self.val
+class ConstExpression(Expression):
+    def __init__(self, value: Union[str, int, float]):
+        self.value = value
 
     def _children(self) -> Iterable['Expression']:
         return []
+
+    def __repr__(self) -> str:
+        return repr(self.value)
+
+
+@pg_node
+def A_Const(a: Dict):
+    meta = extract_meta(a['val'])
+    if meta.typename == 'String':
+        return ConstExpression(meta.a['str'])
+    elif meta.typename == 'Float':
+        return ConstExpression(float(meta.a['str']))
+    elif meta.typename == 'Integer':
+        return ConstExpression(meta.a['ival'])
+    else:  # pragma: no cover
+        raise SqlError(f'Unknwon A_Const type: {meta.typename}, a={a}')
 
 
 @expression_class
-class ColumnRef(Expression):
-    def __init__(self, a):
-        fields = a.pop('fields')
-        if any('String' not in f for f in fields):
-            raise SqlError(f'"*" is not allowed for selecting columns')  # pragma: no cover
-        self.fields: Tuple[str, ...] = tuple(f['String']['str'] for f in fields)
-
-    def evaluate(self, context: Context):
-        return context.columnref(self.fields)
+class ColumnRefExpression(Expression):
+    def __init__(self, fields: Tuple[str, ...]):
+        self.fields = fields
 
     def _children(self) -> Iterable['Expression']:
         return []
 
+    def __repr__(self) -> str:
+        return f'column[{".".join(self.fields)}]'
 
-class BinaryOperationExpression(Expression):
-    def __init__(self, name: str, left: Expression, right: Expression):
-        self._name = name
-        self._left = left
-        self._right = right
 
-    def evaluate(self, context: Context):
-        return context.binary_operation(
-            self._name,
-            self._left.evaluate(context),
-            self._right.evaluate(context),
-        )
+@expression_class
+class SharedValueRefExpression(Expression):
+    def __init__(self, name: str):
+        self.name = name
 
     def _children(self) -> Iterable['Expression']:
-        return [self._left, self._right]
+        return []
+
+    def __repr__(self) -> str:
+        return f'shared value: {self.name}'
 
 
+@pg_node
+def ColumnRef(a: Dict):
+    fs = a.pop('fields')
+    if any('String' not in f for f in fs):
+        raise SqlError(f'"*" is not allowed for selecting columns')  # pragma: no cover
+    fields = tuple(f['String']['str'] for f in fs)
+    if fields in constants:
+        return ConstExpression(constants[fields])
+    if len(fields) == 2 and fields[0] == 'shared':
+        return SharedValueRefExpression(fields[1])
+    return ColumnRefExpression(fields)
+
+
+@expression_class
 class UnaryOperationExpression(Expression):
-    def __init__(self, name: str, right: Expression):
-        self._name = name
-        self._right = right
+    def __init__(self, name: str, a: Expression):
+        self.name = name
+        self.a = a
 
-    def evaluate(self, context: Context):
-        return context.unary_operation(self._name, self._right.evaluate(context))
+    def _children(self) -> Iterable[Expression]:
+        return [self.a]
 
-    def _children(self) -> Iterable['Expression']:
-        return [self._right]
+    def __repr__(self) -> str:
+        return f'{self.name} ({self.a})'
 
 
+@expression_class
+class BinaryOperationExpression(Expression):
+    def __init__(self, name: str, a: Expression, b: Expression):
+        self.name = name
+        self.a = a
+        self.b = b
+
+    def _children(self) -> Iterable[Expression]:
+        return [self.a, self.b]
+
+    def __repr__(self) -> str:
+        return f'({self.a}) {self.name} ({self.b})'
+
+
+@expression_class
 class BetweenExpression(Expression):
-    def __init__(self, a: Expression, b: Expression, c: Expression):
-        self._a = a
-        self._b = b
-        self._c = c
+    def __init__(self, a: Expression, b: Expression, c: Expression, negate: bool):
+        self.a = a
+        self.b = b
+        self.c = c
+        self.negate = negate
 
-    def evaluate(self, context: Context):
-        return context.between(
-            self._a.evaluate(context),
-            self._b.evaluate(context),
-            self._c.evaluate(context),
+    def _children(self) -> Iterable[Expression]:
+        return [self.a, self.b, self.c]
+
+    def __repr__(self) -> str:
+        return f'({self.a}) BETWEEN {"NOT " if self.negate else ""}({self.b}) AND ({self.c})'
+
+
+@pg_node
+def A_Expr(a: Dict):
+    kind = a.pop('kind')
+    if kind == 0:
+        name_tuple = tuple(s['String']['str'] for s in a.pop('name'))
+        assert len(name_tuple) == 1, f'Unknown operator: '
+        name = name_tuple[0]
+        if 'lexpr' in a:  # binary operator
+            left = Expression.from_rawast(a.pop('lexpr'))
+            right = Expression.from_rawast(a.pop('rexpr'))
+            e = BinaryOperationExpression(name, left, right)
+        else:  # unary operator
+            right = Expression.from_rawast(a.pop('rexpr'))
+            e = UnaryOperationExpression(name, right)
+    elif kind == 11:  # BETWEEN
+        assert a.pop('name')[0]['String']['str'] == 'BETWEEN'
+        rexpr = a.pop('rexpr')
+        e = BetweenExpression(
+            Expression.from_rawast(a.pop('lexpr')),
+            Expression.from_rawast(rexpr[0]),
+            Expression.from_rawast(rexpr[1]),
+            False,
         )
-
-    def _children(self) -> Iterable['Expression']:
-        return [self._a, self._b, self._c]
-
-
-@expression_class
-class A_Expr(Expression):
-
-    def __init__(self, a: Dict):
-        self._location = a.pop('location')
-        kind = a.pop('kind')
-        if kind == 0:
-            name_tuple = tuple(s['String']['str'] for s in a.pop('name'))
-            assert len(name_tuple) == 1, f'Unknown operator: '
-            name = name_tuple[0]
-            if 'lexpr' in a:  # binary operator
-                left = Expression.from_rawast(a.pop('lexpr'))
-                right = Expression.from_rawast(a.pop('rexpr'))
-                self._expr = BinaryOperationExpression(name, left, right)
-            else:  # unary operator
-                right = Expression.from_rawast(a.pop('rexpr'))
-                self._expr = UnaryOperationExpression(name, right)
-        elif kind == 11:  # BETWEEN
-            assert a.pop('name')[0]['String']['str'] == 'BETWEEN'
-            rexpr = a.pop('rexpr')
-            self._expr = BetweenExpression(
-                Expression.from_rawast(a.pop('lexpr')),
-                Expression.from_rawast(rexpr[0]),
-                Expression.from_rawast(rexpr[1]),
-            )
-        elif kind == 12:  # pragma: no cover
-            assert a.pop('name')[0]['String']['str'] == 'NOT BETWEEN'
-            raise SqlError(f'NOT BETWEEN Syntax is not supported. Use "NOT (a BETWEEN b AND c)" instead of "a NOT BETWEEN b AND c"')
-        assert len(a) == 0, (a, kind)
-
-    def evaluate(self, context: Context):
-        return self._expr.evaluate(context)
-
-    def _children(self) -> Iterable['Expression']:
-        return [self._expr]
+    elif kind == 12:
+        assert a.pop('name')[0]['String']['str'] == 'NOT BETWEEN'
+        rexpr = a.pop('rexpr')
+        e = BetweenExpression(
+            Expression.from_rawast(a.pop('lexpr')),
+            Expression.from_rawast(rexpr[0]),
+            Expression.from_rawast(rexpr[1]),
+            True,
+        )
+    else:  # pragma: no cover
+        raise SqlError(f'Unknwon expr name: {a}')
+    a.pop('location')
+    assert len(a) == 0, (a, kind)
+    return e
 
 
 @expression_class
-class BoolExpr(Expression):
-    def __init__(self, a: Dict):
-        self._location = a.pop('location')
-        self._op = {
-            0: 'AND',
-            1: 'OR',
-            2: 'NOT',
-        }[a.pop('boolop')]
-        self._args = [Expression.from_rawast(arg) for arg in a.pop('args')]
-        assert len(a) == 0, a
+class BoolExpression(Expression):
+    def __init__(self, name: str, args: List[Expression]):
+        self.name = name
+        self.args = args
 
-    def evaluate(self, context: Context):
-        return context.boolean_operation(self._op, [a.evaluate(context) for a in self._args])
+    def _children(self):
+        return self.args
 
-    def _children(self) -> Iterable['Expression']:
-        return self._args
+    def __repr__(self) -> str:
+        if self.name == 'NOT':
+            return f'NOT ({self.args[0]})'
+        else:
+            return f' {self.name} '.join(f'({a})' for a in self.args)
+
+
+@pg_node
+def BoolExpr(a: Dict):
+    op = {
+        0: 'AND',
+        1: 'OR',
+        2: 'NOT',
+    }[a.pop('boolop')]
+    args = [Expression.from_rawast(arg) for arg in a.pop('args')]
+    a.pop('location')
+    assert len(a) == 0, a
+    return BoolExpression(op, args)
 
 
 @expression_class
-class FuncCall(Expression):
-    def __init__(self, a: Dict):
-        self._location = a.pop('location')
-        self.funcname = tuple(s['String']['str'] for s in a.pop('funcname'))
-        agg_star = a.pop('agg_star', False)
-        self._agg_star = agg_star
-        args = [] if agg_star else [Expression.from_rawast(arg) for arg in a.pop('args')]
-        self.args = [cast(Expression, e) for e in args if not isinstance(e, NamedArgExpr)]
-        named_args: List[NamedArgExpr] = [e for e in args if isinstance(e, NamedArgExpr)]
-        self.named_args = {e.name: e.arg for e in named_args}
-        if len(named_args) != len(self.named_args):
-            raise SqlError(f'Argument names must be unique for function `{self._funcname}`')
-        assert len(a) == 0, a
-
-    def evaluate(self, context: Context):
-        args = [arg.evaluate(context) for arg in self.args]
-        named_args = {k: v.evaluate(context) for k, v in self.named_args.items()}
-        return context.funccall(self.funcname, args, named_args, self._agg_star, self)
+class FuncCallExpression(Expression):
+    def __init__(self, name: Tuple[str, ...], args: List[Expression], named_args: Dict[str, Expression], agg_star: bool):
+        self.name = name
+        self.args = args
+        self.named_args = named_args
+        self.agg_star = agg_star
 
     def _children(self) -> Iterable['Expression']:
         return chain(self.args, self.named_args.values())
 
+    def __repr__(self) -> str:
+        funcname = '.'.join(self.name)
+        if self.agg_star:
+            return f'{funcname}(*)'
+        else:
+            return f'{funcname}(*{self.args}, **{self.named_args})'
+
+
+@pg_node
+def FuncCall(a: Dict):
+    a.pop('location')
+    funcname = tuple(s['String']['str'] for s in a.pop('funcname'))
+    agg_star = a.pop('agg_star', False)
+    raw_args = [] if agg_star else [Expression.from_rawast(arg) for arg in a.pop('args')]
+    args = [cast(Expression, e) for e in raw_args if not isinstance(e, NamedArg)]
+    named_args0: List[NamedArg] = [e for e in raw_args if isinstance(e, NamedArg)]
+    named_args = {e.name: e.arg for e in named_args0}
+    if len(named_args) != len(named_args0):  # pragma: no cover
+        raise SqlError(f'Argument names must be unique for function `{funcname}`')
+    assert len(a) == 0, a
+    return FuncCallExpression(funcname, args, named_args, agg_star)
+
+
+class NamedArg(NamedTuple):
+    name: str
+    arg: Expression
+
+
+@pg_node
+def NamedArgExpr(a: Dict):
+    a.pop('location')
+    arg = Expression.from_rawast(a.pop('arg'))
+    name = a.pop('name')
+    assert a.pop('argnumber') == -1, a
+    assert len(a) == 0, a
+    return NamedArg(name, arg)
+
 
 @expression_class
-class NamedArgExpr(Expression):
-    def __init__(self, a: Dict):
-        self._location = a.pop('location')
-        self.arg = Expression.from_rawast(a.pop('arg'))
-        self.name = a.pop('name')
-        assert a.pop('argnumber') == -1, a
-        assert len(a) == 0, a
-
-
-class Row:
-    def __init__(self, *args):
-        self.args = tuple(args)
-
-    def __eq__(self, other: 'Row'):
-        return isinstance(other, Row) and self.args == other.args
-
-
-@expression_class
-class RowExpr(Expression):
-    def __init__(self, a: Dict):
-        self._location = a.pop('location')
-        assert a.pop('row_format') == 2
-        self._args = [Expression.from_rawast(arg) for arg in a.pop('args')]
-        assert len(a) == 0
-
-    def evaluate(self, context: Context):
-        return Row(*(a.evaluate(context) for a in self._args))
+class RowExpression(Expression):
+    def __init__(self, args: List[Expression]):
+        self.args = args
 
     def _children(self) -> Iterable['Expression']:
-        return self._args
+        return self.args
+
+    def __repr__(self) -> str:
+        return str(self.args)
+
+
+@pg_node
+def RowExpr(a: Dict):
+    a.pop('location')
+    assert a.pop('row_format') == 2
+    args = [Expression.from_rawast(arg) for arg in a.pop('args')]
+    return RowExpression(args)
 
 
 @expression_class
-class A_Indirection(Expression):
-    def __init__(self, a: Dict):
-        self._arg = Expression.from_rawast(a.pop('arg'))
-        indices = a.pop('indirection')
-        if len(indices) > 1:
-            raise SqlError(f'Nested indices are not supported')  # pragma: no cover
-        index = indices[0]['A_Indices']
-        if 'is_slice' in index:
-            raise SqlError(f'Slicing is not supported')  # pragma: no cover
-        uidx = A_Const(index.pop('uidx')['A_Const'])
-        assert len(index) == 0, index
-        if uidx.typename != 'Integer':
-            raise SqlError(f'Index value must be an integer. given: {uidx.val}')  # pragma: no cover
-        self._index = cast(int, uidx.val)
-
-    def evaluate(self, context: Context):
-        return context.indirection(self._arg.evaluate(context), self._index)
+class IndirectionExpression(Expression):
+    def __init__(self, arg: Expression, index: int):
+        self.arg = arg
+        self.index = index
 
     def _children(self) -> Iterable['Expression']:
-        return [self._arg]
+        return [self.arg]
+
+    def __repr__(self) -> str:
+        return f'({self.arg})[{self.index}]'
 
 
-def parse_sql(sql: str):
-    from pglast import parse_sql
-    from pglast.parser import ParseError  # pylint: disable=no-name-in-module
-    try:
-        return parse_sql(sql)
-    except ParseError as error:  # pragma: no cover
-        raise SqlError(str(error))
+@pg_node
+def A_Indirection(a: Dict):
+    arg = Expression.from_rawast(a.pop('arg'))
+    indices = a.pop('indirection')
+    if len(indices) > 1:
+        raise SqlError(f'Nested indices are not supported')  # pragma: no cover
+    index = indices[0]['A_Indices']
+    if 'is_slice' in index:
+        raise SqlError(f'Slicing is not supported')  # pragma: no cover
+    uidx = A_Const(index.pop('uidx')['A_Const'])
+    assert len(index) == 0, index
+    if not isinstance(uidx.value, int):
+        raise SqlError(f'Index value must be an integer. given: {uidx.value}')  # pragma: no cover
+    return IndirectionExpression(arg, uidx.value)

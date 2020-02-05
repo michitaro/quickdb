@@ -159,9 +159,4 @@ def exclusive():
 
 
 if __name__ == '__main__':
-    if os.environ.get('DATARAKE_TRACE'):
-        import trace
-        tracer = trace.Trace()
-        tracer.run('main()')
-    else:
-        main()
+    main()

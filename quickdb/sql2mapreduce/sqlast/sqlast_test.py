@@ -1,8 +1,12 @@
-from quickdb.sql2mapreduce.sqlast.sqlast import RowExpr
-from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, Type, cast
+import math
 import unittest
+from typing import Any, List, Set, Tuple, Type, cast
 
-from .sqlast import A_Const, ColumnRef, Context, Expression, NamedArgExpr, Select, Row, UnaryOperationExpression
+from .sqlast import (BetweenExpression, BinaryOperationExpression,
+                     BoolExpression, ColumnRefExpression, ConstExpression,
+                     Context, Expression, FuncCallExpression,
+                     IndirectionExpression, RowExpr, RowExpression, Select,
+                     UnaryOperationExpression, SharedValueRefExpression)
 
 
 class Test_Select(unittest.TestCase):
@@ -17,12 +21,12 @@ class Test_Select(unittest.TestCase):
         select = Select(sql)
         self.assertIsNone(select.target_list[0].name)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('columnref', ('forced', 'i', 'col1')),
         )
         self.assertEqual(select.target_list[1].name, 'column_2')
         self.assertEqual(
-            select.target_list[1].val.evaluate(self.context),
+            select.target_list[1].val(self.context),
             ('columnref', ('col2', )),
         )
 
@@ -43,7 +47,7 @@ class Test_Select(unittest.TestCase):
         '''
         select = Select(sql)
         where = cast(Expression, select.where_clause)
-        self.assertEqual(where.evaluate(self.context), ('columnref', ('forced', 'isprimary')))
+        self.assertEqual(where(self.context), ('columnref', ('forced', 'isprimary')))
 
     def test_order_clause(self):
         sql = '''
@@ -55,9 +59,9 @@ class Test_Select(unittest.TestCase):
         select = Select(sql)
         sort0 = select.sort_clause[0]
         sort1 = select.sort_clause[1]
-        self.assertEqual(sort0.node.evaluate(self.context), ('columnref', ('object_id',)))
+        self.assertEqual(sort0.node(self.context), ('columnref', ('object_id',)))
         self.assertFalse(sort0.reverse)
-        self.assertEqual(sort1.node.evaluate(self.context), ('columnref', ('skymap_id',)))
+        self.assertEqual(sort1.node(self.context), ('columnref', ('skymap_id',)))
         self.assertTrue(sort1.reverse)
 
     def test_limit_count(self):
@@ -84,7 +88,7 @@ class Test_Select(unittest.TestCase):
         '''
         select = Select(sql)
         self.assertEqual(
-            select.group_clause[0].evaluate(self.context),
+            select.group_clause[0](self.context),
             ('columnref', ('is_a_star',)),
         )
 
@@ -109,54 +113,104 @@ class Test_Select(unittest.TestCase):
     @property
     def context(self):
         class TestContext(Context):
-            def columnref(self, ref: Tuple[str, ...]):
-                return ('columnref', ref)
+            def evaluate_ColumnRefExpression(self, e: ColumnRefExpression):
+                return ('columnref', e.fields)
 
         return TestContext()
 
+
+def subsql2expression(subsql: str):
+    sql = f'''SELECT {subsql} FROM t'''
+    select = Select(sql)
+    return select.target_list[0].val
+
+
+class TestRepr(unittest.TestCase):
+    def test_repr(self):
+        # just for coverage
+        str(subsql2expression('''
+            a + b > 0 AND NOT (c NOT BETWEEN c AND d[2]) OR x.y.z(arg1, named_arg => 3, myrow => (1, 2), COUNT(*)) AND shared.w + (- value)
+        '''))
 
 class Test_ColumnRef(unittest.TestCase):
     def test_columnref(self):
         sql = '''SELECT x.y from t'''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('columnref', ('x', 'y')),
         )
 
     @property
     def context(self):
         class TestContext(Context):
-            def columnref(self, ref: Tuple[str, ...]):
-                return ('columnref', ref)
+            def evaluate_ColumnRefExpression(self, e: ColumnRefExpression):
+                return ('columnref', e.fields)
         return TestContext()
 
 
-class Test_A_Const(unittest.TestCase):
+class Test_SharedValueRef(unittest.TestCase):
+    def test_shared_value_ref(self):
+        sql = '''SELECT shared.x from t'''
+        select = Select(sql)
+        self.assertEqual(
+            select.target_list[0].val(self.context),
+            ('shared', 'x'),
+        )
+
+    @property
+    def context(self):
+        class TestContext(Context):
+            def evaluate_SharedValueRefExpression(self, e: SharedValueRefExpression):
+                return ('shared', e.name)
+        return TestContext()
+
+
+class Test_builtin_constants(unittest.TestCase):
+    def test_pi(self):
+        sql = '''SELECT pi from t'''
+        select = Select(sql)
+        self.assertEqual(
+            select.target_list[0].val(self.context),
+            math.pi,
+        )
+
+    @property
+    def context(self):
+        class TestContext(Context):
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
+        return TestContext()
+
+
+class Test_ConstExpression(unittest.TestCase):
     def test_string(self):
         sql = '''SELECT 'hello world' FROM t'''
         select = Select(sql)
-        self.assertEqual(select.target_list[0].val.evaluate(self.context), 'hello world')
+        self.assertEqual(select.target_list[0].val(self.context), 'hello world')
 
     def test_float(self):
         sql = '''SELECT 3.14 FROM t'''
         select = Select(sql)
-        self.assertEqual(select.target_list[0].val.evaluate(self.context), 3.14)
+        self.assertEqual(select.target_list[0].val(self.context), 3.14)
 
     def test_int(self):
         sql = '''SELECT 42 FROM t'''
         select = Select(sql)
-        self.assertEqual(select.target_list[0].val.evaluate(self.context), 42)
+        self.assertEqual(select.target_list[0].val(self.context), 42)
 
     @property
     def context(self):
-        return Context()
+        class TestContext(Context):
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
+        return TestContext()
 
 
 class Test_BinaryOperationExpression(unittest.TestCase):
     def test_binary_operation(self):
         select = Select('SELECT 0 = 1 FROM t')
-        self.assertEqual(select.target_list[0].val.evaluate(self.context), ('=', 0, 1))
+        self.assertEqual(select.target_list[0].val(self.context), ('=', 0, 1))
 
     def test_binary_operations(self):
         ops = '''
@@ -164,26 +218,36 @@ class Test_BinaryOperationExpression(unittest.TestCase):
         '''.split()
         for op in ops:
             select = Select(f'SELECT 0 {op} 1 FROM t')
-            self.assertEqual(select.target_list[0].val.evaluate(self.context), (op, 0, 1))
+            self.assertEqual(select.target_list[0].val(self.context), (op, 0, 1))
 
     @property
     def context(self):
         class TestContext(Context):
-            def binary_operation(self, name: str, left: Expression, right: Expression):
-                return (name, left, right)
+            def evaluate_BinaryOperationExpression(self, e: BinaryOperationExpression):
+                return (e.name, e.a(self), e.b(self))
+
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
         return TestContext()
 
 
 class Test_BetweenExpression(unittest.TestCase):
     def test_between(self):
         select = Select('''SELECT 'x' BETWEEN 'y' AND 'z' FROM t''')
-        self.assertEqual(select.target_list[0].val.evaluate(self.context), ('between', 'x', 'y', 'z'))
+        self.assertEqual(select.target_list[0].val(self.context), ('between', 'x', 'y', 'z', False))
+
+    def test_not_between(self):
+        select = Select('''SELECT 'x' NOT BETWEEN 'y' AND 'z' FROM t''')
+        self.assertEqual(select.target_list[0].val(self.context), ('between', 'x', 'y', 'z', True))
 
     @property
     def context(self):
         class TestContext(Context):
-            def between(self, a, b, c):
-                return ('between', a, b, c)
+            def evaluate_BetweenExpression(self, e: BetweenExpression):
+                return ('between', e.a(self), e.b(self), e.c(self), e.negate)
+
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
         return TestContext()
 
 
@@ -192,7 +256,7 @@ class Test_UnaryOperation(unittest.TestCase):
         sql = ''' SELECT - 'hello world' FROM t'''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('unary', '-', 'hello world')
         )
 
@@ -202,15 +266,18 @@ class Test_UnaryOperation(unittest.TestCase):
             sql = f''' SELECT {op} 'hello world' FROM t'''
             select = Select(sql)
             self.assertEqual(
-                select.target_list[0].val.evaluate(self.context),
+                select.target_list[0].val(self.context),
                 ('unary', op, 'hello world')
             )
 
     @property
     def context(self):
         class TestContext(Context):
-            def unary_operation(self, name: str, right):
-                return ('unary', name, right)
+            def evaluate_UnaryOperationExpression(self, e: UnaryOperationExpression):
+                return ('unary', e.name, e.a(self))
+
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
 
         return TestContext()
 
@@ -219,33 +286,36 @@ class Test_BoolExpr(unittest.TestCase):
     def test_and(self):
         sql = ''' SELECT 'x' AND 'y' FROM t '''
         select = Select(sql)
-        self.assertTrue(select.target_list[0].val.evaluate(self.context), ('AND', ['x', 'y']))
+        self.assertTrue(select.target_list[0].val(self.context), ('AND', ['x', 'y']))
 
     def test_or(self):
         sql = ''' SELECT 'x' OR 'y' FROM t '''
         select = Select(sql)
-        self.assertTrue(select.target_list[0].val.evaluate(self.context), ('OR', ['x', 'y']))
+        self.assertTrue(select.target_list[0].val(self.context), ('OR', ['x', 'y']))
 
     def test_not(self):
         sql = ''' SELECT NOT 'x' FROM t '''
         select = Select(sql)
-        self.assertTrue(select.target_list[0].val.evaluate(self.context), ('NOT', ['x']))
+        self.assertTrue(select.target_list[0].val(self.context), ('NOT', ['x']))
 
     @property
     def context(self):
         class TestContext(Context):
-            def boolean_operation(self, op, args):
-                return (op, args)
+            def evaluate_BoolExpression(self, e: BoolExpression):
+                return e.name, e.args
+
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
 
         return TestContext()
 
 
-class Test_funccall(unittest.TestCase):
+class Test_FuncCall(unittest.TestCase):
     def test_funccall(self):
         sql = ''' SELECT my.func('x') FROM t '''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('funccall', (('my', 'func'), ['x'], {}, False)),
         )
 
@@ -253,54 +323,60 @@ class Test_funccall(unittest.TestCase):
         sql = ''' SELECT my.func('w', arg1 => 'x', 'y', arg2 => (3, 4)) FROM t '''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
-            ('funccall', (('my', 'func'), ['w', 'y'], {'arg1': 'x', 'arg2': Row(3, 4)}, False)),
+            select.target_list[0].val(self.context),
+            ('funccall', (('my', 'func'), ['w', 'y'], {'arg1': 'x', 'arg2': [3, 4]}, False)),
         )
 
     @property
     def context(self):
         class TestContext(Context):
-            def funccall(self, name: Tuple[str, ...], args: List, named_args: Dict, agg_star: bool, expressoin: 'Expression'):
-                return ('funccall', (name, args, named_args, agg_star, ))
+            def evaluate_FuncCallExpression(self, e: FuncCallExpression):
+                return ('funccall', (e.name, [a(self) for a in e.args], {k: v(self) for k, v in e.named_args.items()}, e.agg_star))
+
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
+
+            def evaluate_RowExpression(self, e: RowExpression):
+                return [a(self) for a in e.args]
 
         return TestContext()
 
 
-class Test_Index(unittest.TestCase):
+class Test_Indirection(unittest.TestCase):
     def test_funccall(self):
         sql = ''' SELECT x.y[42] FROM t '''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('indirection', ('columnref', ('x', 'y')), 42),
         )
 
     @property
     def context(self):
         class TestContext(Context):
-            def columnref(self, ref: Tuple[str, ...]):
-                return ('columnref', ref)
+            def evaluate_ColumnRefExpression(self, e: ColumnRefExpression):
+                return ('columnref', e.fields)
 
-            def indirection(self, arg, index):
-                return ('indirection', arg, index)
+            def evaluate_IndirectionExpression(self, e: IndirectionExpression):
+                return ('indirection', e.arg(self), e.index)
 
         return TestContext()
 
 
-class Test_A(unittest.TestCase):
+class Test_A_Star(unittest.TestCase):
     def test_astar(self):
         sql = ''' SELECT COUNT(*) FROM t'''
         select = Select(sql)
         self.assertEqual(
-            select.target_list[0].val.evaluate(self.context),
+            select.target_list[0].val(self.context),
             ('funccall', ('count', ), [], {}, True),
         )
 
     @property
     def context(self):
         class TestContext(Context):
-            def funccall(self, name: Tuple[str, ...], args: List, named_args: Dict, agg_star: bool, expressoin: 'Expression'):
-                return ('funccall', name, args, named_args, agg_star)
+            def evaluate_FuncCallExpression(self, e: FuncCallExpression):
+                return ('funccall', e.name, e.args, e.named_args, e.agg_star)
 
         return TestContext()
 
@@ -323,41 +399,66 @@ class Test_walk(unittest.TestCase):
             for e in walked:
                 for i, (cls, value) in enumerate(targets):
                     if isinstance(e, cls):
-                        if e.evaluate(self.context) == value:
+                        if e(self.context) == value:
                             targets.pop(i)
                             break
 
             self.assertEqual(targets, [])
 
         # binary operation
-        check_walked(''' 0 + 1 ''', [(A_Const, 0), (A_Const, 1)])
+        check_walked(''' 0 + 1 ''', [(ConstExpression, 0), (ConstExpression, 1)])
         # unary operation
-        check_walked(''' - 'x' ''', [(A_Const, 'x')])
+        check_walked(''' - 'x' ''', [(ConstExpression, 'x')])
         # columnref
         check_walked(''' forced.i ''', [])
+        # shared value
+        check_walked(''' shared.x ''', [])
         # between
-        check_walked(''' 'a' BETWEEN 'b' AND 'c' ''', [(A_Const, 'a'), (A_Const, 'b'), (A_Const, 'c')])
+        check_walked(''' 'a' BETWEEN 'b' AND 'c' ''', [(ConstExpression, 'a'), (ConstExpression, 'b'), (ConstExpression, 'c')])
         # bool
-        check_walked(''' 'a' AND 'b' ''', [(A_Const, 'a'), (A_Const, 'b')])
+        check_walked(''' 'a' AND 'b' ''', [(ConstExpression, 'a'), (ConstExpression, 'b')])
         # funccall
         check_walked(''' x.y(1, arg => 2) ''', [
-            (A_Const, 1),
-            (A_Const, 2),
+            (ConstExpression, 1),
+            (ConstExpression, 2),
         ])
         # row
         check_walked(''' x.y(range => (0, 1)) ''', [
-            (RowExpr, Row(0, 1)),
-            (A_Const, 0),
-            (A_Const, 1),
+            (RowExpression, [0, 1]),
+            (ConstExpression, 0),
+            (ConstExpression, 1),
         ])
         # indirection
         check_walked(''' a[0] ''', [
-            (ColumnRef, ('columnref', ('a', ))),
+            (ColumnRefExpression, ('columnref', ('a', ))),
         ])
+
+    def check_walk_break_if(self):
+        walked_e: Set[Expression] = set()
+
+        def walk(e: Expression):
+            walked_e.add(e)
+
+        def break_if(e: Expression):
+            return isinstance(e, RowExpr)
+
+        sql = ''' SELECT (1, 2) FROM t'''
+        select = Select(sql)
+        select.target_list[0].val.walk(walk, break_if)
+        walked_v = {e(self.context) for e in walked_e}
+        self.assertIn([1, 2], walked_v)
+        self.assertNotIn(1, walked_v)
+        self.assertNotIn(2, walked_v)
 
     @property
     def context(self):
         class TestContext(Context):
-            def columnref(self, ref: Tuple[str, ...]):
-                return ('columnref', ref)
+            def evaluate_ConstExpression(self, e: ConstExpression):
+                return e.value
+
+            def evaluate_ColumnRefExpression(self, e: ColumnRefExpression):
+                return ('columnref', e.fields)
+
+            def evaluate_RowExpression(self, e: RowExpression):
+                return [a(self) for a in e.args]
         return TestContext()
