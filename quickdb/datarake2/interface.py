@@ -1,18 +1,8 @@
-from typing import Any, Dict, NamedTuple
-
-
-class WorkerRequest(NamedTuple):
-    make_env: str
-    shared: Dict
-
-
-class WorkerResult(NamedTuple):
-    value: Any
-
-
-class UserError(NamedTuple):
-    reason: str
-
+from typing import Any, Callable, Dict, NamedTuple, Optional
 
 class Progress(NamedTuple):
-    value: float
+    total: int
+    done: int
+
+ProgressCB = Callable[[Progress], None]
+RunMakeEnv = Callable[[str, Dict, Optional[ProgressCB]], Any]

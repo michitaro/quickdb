@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from functools import lru_cache, reduce
 import os
 import pickle
+from quickdb.datarake2.interface import Progress
 from quickdb.datarake.utils import keychain
 import socket
 import socketserver
@@ -12,7 +13,7 @@ from quickdb.datarake2.auth import AuthError, knock
 from quickdb.sspcatalog.errors import UserError
 from quickdb.test_config import REPO_DIR
 
-from . import interface
+from . import api
 from . import config
 from . import worker
 
@@ -34,8 +35,8 @@ class TestWorker(ConfigSetting):
     def test_process_request(self):
         history = []
 
-        def progress(value: float):
-            history.append(value)
+        def progress(p: Progress):
+            history.append(p.done)
 
         make_env = '''
         def mapper(patch):
@@ -122,14 +123,14 @@ class TestServer(ServerTest, ConfigSetting):
                 return a + b
             '''
 
-            pickle.dump(interface.WorkerRequest(make_env, {}), wfile)
+            pickle.dump(api.WorkerRequest(make_env, {}), wfile)
             wfile.close()
             while True:
                 res = pickle.load(rfile)
-                if not isinstance(res, interface.Progress):
+                if not isinstance(res, api.Progress):
                     break
-            res: interface.WorkerResult = res
-            self.assertIsInstance(res, interface.WorkerResult)
+            res: api.WorkerResult = res
+            self.assertIsInstance(res, api.WorkerResult)
             self.assertEqual(
                 res.value,
                 reduce(lambda a, b: a + b, [p.size for p in patches('pdr2_dud')]),
@@ -151,11 +152,11 @@ class TestServer(ServerTest, ConfigSetting):
                 return a + b
             '''
 
-            pickle.dump(interface.WorkerRequest(make_env, {}), wfile)
+            pickle.dump(api.WorkerRequest(make_env, {}), wfile)
             wfile.close()
             while True:
                 res = pickle.load(rfile)
-                if not isinstance(res, interface.Progress):
+                if not isinstance(res, api.Progress):
                     break
             self.assertIsInstance(res, ZeroDivisionError)
             

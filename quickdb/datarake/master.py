@@ -4,7 +4,7 @@ import pickle
 import socket
 from typing import Dict
 
-from quickdb.sql2mapreduce import ProgressCB
+from quickdb.datarake2.interface import ProgressCB
 
 from . import config, utils
 

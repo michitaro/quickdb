@@ -4,7 +4,7 @@ from typing import (
 
 import numpy
 
-from quickdb.sql2mapreduce.interface import ProgressCB, RunMakeEnv
+from quickdb.datarake2.interface import Progress, ProgressCB, RunMakeEnv
 from quickdb.sql2mapreduce.numpy_context import NumpyContext
 from quickdb.sql2mapreduce.sqlast.sqlast import (
     ColumnRefExpression, Context, Expression, FuncCallExpression, Select,
@@ -115,8 +115,8 @@ def run_agg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None,
     # run aggregation queries
     agg_results: Dict[Union[Expression, AggCall], Any] = {}
     for i, (e, agg) in enumerate(aggs):
-        def progress1(v1: float):
-            progress((i + v1) / len(aggs))
+        def progress1(p1: Progress):
+            progress(Progress(done=p1.done + i * p1.total, total=p1.total * len(aggs)))
         env_context = {'agg': agg, 'select': select, 'agg_results': agg_results, 'shared': shared}
         result = run_make_env(make_env, env_context, progress1)
         agg_results[agg] = result

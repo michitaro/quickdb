@@ -9,11 +9,11 @@ from typing import Dict, Tuple
 
 from quickdb.datarake.utils import evaluate
 from quickdb.datarake2.auth import AuthError, authenticate
-from quickdb.sql2mapreduce.interface import ProgressCB
+from quickdb.datarake2.interface import Progress, ProgressCB
 
 from . import config
 from .utils import critical, pid_file
-from . import interface
+from . import api
 
 
 class WorkerServer(socketserver.TCPServer):
@@ -38,14 +38,16 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     with critical(), pid_file(args.pid_file):
-        with WorkerServer((args.host, args.port), Handler):
+        with WorkerServer((args.host, args.port), Handler) as server:
             logging.info('worker successfully started')
+            server.serve_forever()
+
 
 
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
-        def progress(p: float):
-            pickle.dump(interface.Progress(p),  self.wfile)
+        def progress(p: Progress):
+            pickle.dump(p,  self.wfile)
             self.wfile.flush()
 
         try:
@@ -53,16 +55,16 @@ class Handler(socketserver.StreamRequestHandler):
         except AuthError:
             return
 
-        request: interface.WorkerRequest = pickle.load(self.rfile)
+        request: api.WorkerRequest = pickle.load(self.rfile)
         
         try:
             result = process_request(request. make_env, request.shared, progress)
         except (UserError, SqlError) as e:
-            pickle.dump(interface.UserError(str(e)), self.wfile)
+            pickle.dump(api.UserError(str(e)), self.wfile)
         except Exception as e:
             pickle.dump(e, self.wfile)
         else:
-            pickle.dump(interface.WorkerResult(result), self.wfile)
+            pickle.dump(api.WorkerResult(result), self.wfile)
 
 
 def get_pool(n_procs=None):
@@ -96,7 +98,7 @@ def process_request(make_env: str, shared: Dict,
     for i, value in enumerate(pool.imap_unordered(_process_partial_tasks, items)):
         result = value if i == 0 else reducer(result, value)
         if progress:
-            progress((i + 1) / len(items))
+            progress(Progress(done=i + 1, total=len(items)))
     return result
 
 

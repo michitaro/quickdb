@@ -35,7 +35,7 @@ def start(trace=False):
     def cmd(worker):
         env = 'DATARAKE_TRACE=1' if trace else ''
         return ['bash', '-c', f"""'cd {worker.work_dir}/python_path
-                                   {env} nohup {worker.python_path} -u -m quickdb.datarake.worker --port {worker.port} >> log 2>&1 &'"""]
+                                   {env} nohup {worker.python_path} -u -m quickdb.datarake2.worker --port {worker.port} >> log 2>&1 &'"""]
     batch.show_result(batch.ssh(cmd))
 
 

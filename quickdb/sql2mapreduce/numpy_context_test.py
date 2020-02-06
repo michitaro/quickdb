@@ -1,4 +1,5 @@
 import os
+from quickdb.sql2mapreduce.nonagg_functions import flux2mag
 from quickdb.test_config import REPO_DIR
 from typing import Tuple
 import unittest
@@ -105,7 +106,7 @@ class TestNumpyContext(unittest.TestCase):
         context = NumpyContext(self.patch)
         self.assertTrue(array_equal(
             e(context),
-            57.543993733715695 * self.patch('forced.i.psfflux_flux'),
+            flux2mag(self.patch('forced.i.psfflux_flux')),
         ))
 
     def test_indirection(self):
@@ -119,7 +120,7 @@ class TestNumpyContext(unittest.TestCase):
     def test_row(self):
         context = NumpyContext(self.patch)
         e = sql2expression('(1, 2)')
-        self.assertEqual( e(context), [1,2] )
+        self.assertEqual(e(context), [1, 2])
 
     @property
     def patch(self):
