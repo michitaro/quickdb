@@ -121,7 +121,7 @@ $ python -m quickdb.sspcatalog.deploy $SOMEWHERE/releases/pdr2_udeep
 $ python -m quickdb.sspcatalog.deploy $SOMEWHERE/releases/pdr2_wide
 ```
 
-### Test Distributed Processing
+### Test distributed processing
 The following instructions shoud be done on the master node.
 
 1. Start worker processes
@@ -143,7 +143,7 @@ The following instructions shoud be done on the master node.
     32818438
     ```
 
-### Start SQL Server for End Users
+### Start SQL server for end users
 The following instructions should be done on the master node.
 1. Install dependent packages.
 
@@ -181,7 +181,7 @@ The following instructions should be done on your laptop.
     jupyter lab examples/sqlclient.ipynb
     ```
 
-### Upgrade Codes
+### Upgrade codes
 
 To upgrade codes, run the following command on the master node.
 ```bash

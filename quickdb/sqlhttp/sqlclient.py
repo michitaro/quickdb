@@ -70,7 +70,7 @@ def post_sql_with_tqdm(sql: str, shared: Dict=None, polling_interval=0.1):
 
     @contextlib.contextmanager
     def progress_bar():
-        with tqdm(total=1, ncols=120) as pbar:
+        with tqdm(total=1, ncols=100) as pbar:
             def progress(p):
                 pbar.total = p.total
                 pbar.n = p.done
