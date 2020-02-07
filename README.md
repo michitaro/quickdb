@@ -178,7 +178,7 @@ The following instructions should be done on your laptop.
 
 1. Launch Jupyter Notebook
     ```bash
-    jupyter lab examples/sqlclient.ipynb
+    jupyter lab sqlclient.ipynb
     ```
 
 ### Upgrade codes
