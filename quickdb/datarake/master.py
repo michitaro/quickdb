@@ -67,9 +67,27 @@ def post_request(worker, make_env, shared, progress1: Callable[[config.Worker, f
             raise UserError(res.reason)
         else:
             raise RuntimeError(res)
-        
+
         # raise res
         # error = response.get('error')
         # if error is not None:
         #     raise RuntimeError(f'@{worker.host}: {error}')
         # return response
+
+
+def test():
+    make_env = '''
+        rerun = 'pdr2_dud'
+
+        def mapper(patch):
+            return patch.size
+        
+        def reducer(a, b):
+            return a + b
+    '''
+    result = run_make_env(make_env)
+    print(result)
+
+
+if __name__ == '__main__':
+    test()

@@ -1,1 +1,0 @@
-server_addr = 'niu.mtk.nao.ac.jp:5000'

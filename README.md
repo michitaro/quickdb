@@ -35,18 +35,19 @@ The following instructions shoud be done on the master node.
     * Worker node receives processing request from master node and performs processing.
     Generate a password to authenticate the master node.
     ```bash
-    $ mkdir -p datarake/secrets
-    $ openssl rand -hex 128 > datarake/secrets/password
-    $ chmod 600 datarake/secrets/password
+    $ mkdir -p quickdb/datarake/secrets
+    $ openssl rand -hex 128 > quickdb/datarake/secrets/password
+    $ chmod 600 quickdb/datarake/secrets/password
     ```
 
 1. Make configurations for worker nodes.
-    * System configuration is kept in `config.py`.
-    * Change `config.master_addr` and `config.workers[*].host` according to your environment.
-    ```bash
-    $ cp datarake/config.py.sample datarake/config.py
-    $ vi datarake/config.py
-    ```
+    * System configuration is kept in `datarake/config.py`.
+    * Change `config.master_addr` and `config.workers[*]` according to your environment.
+        * Quickdb's code itself and data to process will be saved in `config.workers[*].work_dir`.
+        ```bash
+        $ cp datarake/config.py.sample datarake/config.py
+        $ vi datarake/config.py
+        ```
     * `config.py` will be transferred to the worker node later.
 
 ### Worker node
@@ -57,10 +58,7 @@ The following instructions shoud be done on each worker node.
     * We recommend using [Anaconda](https://anaconda.org).
     * Python will be installed in `/home/quickdb/anaconda3` when using Anaconda.
 
-1. Make work directory
-    ```bash
-    $ mkdir -p ~/quickdb/python_path
-    ```
+1. Make sure that the work directory on the worker node is empty. The contents of the work direcotry might will overwritten by quickdb.
 
 1. Make sure that port 2935 can be accessed from the outside.
     (`outside` means computers other than this node)
@@ -119,8 +117,8 @@ The following instructions shoud be done on the master node.
 
 Data to be processed can be distributed to worker nodes by the following command.
 ```bash
-$ python -m sspcatalog.deploy $SOMEWHERE/releases/pdr1_udeep
-$ python -m sspcatalog.deploy $SOMEWHERE/releases/pdr1_wide
+$ python -m quickdb.sspcatalog.deploy $SOMEWHERE/releases/pdr2_udeep
+$ python -m quickdb.sspcatalog.deploy $SOMEWHERE/releases/pdr2_wide
 ```
 
 ### Test Distributed Processing
@@ -142,21 +140,28 @@ The following instructions shoud be done on the master node.
     * This is equivalent to `SELECT COUNT(*) FROM $DEFAULT_RERUN`.
     ```bash
     $ python -m quickdb.datarake.master
-    5073357
+    32818438
     ```
 
 ### Start SQL Server for End Users
 The following instructions should be done on the master node.
+1. Install dependent packages.
+
+    These packages are necessary to deal with SQL and need to be installed on only master node.
+    ```bash
+    $ pip install flask pglast
+    ```
+    * You can also use `pipenv` to manage dependent packages. See `Pipfile`.
 
 1. Start server for SQL interface
     ```bash
-    $ python -m webif.server
-    Serving on port 8002 ...
+    $ FLASK_APP=quickdb.sqlhttp.sqlserver flask run --port 8002 --host 0.0.0.0
     ```
+    It is possible to use other application servers for WSGI such as gunicorn or uWSGI. See [here](https://flask.palletsprojects.com/en/1.1.x/deploying/wsgi-standalone/).
 
 1. Confirm that port 8002 can be accessed from the outside.
 
-### Test SQL Interface for End Users
+### Test SQL interface for end users
 The following instructions should be done on your laptop.
 
 1. Check out `quickdb`
@@ -167,14 +172,13 @@ The following instructions should be done on your laptop.
 
 1. Setting of connection destination
     ```bash
-    cp webif/config.py.sample webif/config.py
-    vi webif/config.py
-    # change server address for master node
+    cp quickdb/sqlhttp/{config.py.sample,config.py}
+    vi quickdb/sqlhttp/config.py # change server address for master node
     ```
 
 1. Launch Jupyter Notebook
     ```bash
-    jupyter lab ./sample.ipynb
+    jupyter lab examples/sqlclient.ipynb
     ```
 
 ### Upgrade Codes

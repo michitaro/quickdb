@@ -9,7 +9,7 @@ from ..sspcatalog.patch import Patch, Rerun
 #
 # Workers allow access from only `master_addr`
 ###############################################################################
-master_addr = '133.40.210.189'  # socket.gethostbyname('quickdb-master.example.com')
+master_addr = '127.0.0.1'  # socket.gethostbyname('quickdb-master.example.com')
 
 
 ###############################################################################
@@ -39,18 +39,13 @@ class Worker:
 
 
 user = 'michitaro'
-work_dir = f'/db1/koike/quickdb-pdr2'
+work_dir = f'/home/{user}/quickdb'
 python_path = f'/home/{user}/anaconda3/bin/python'
 
 workers = [
     Worker('hdr-db05', 'hdr-db05', work_dir, python_path),
     Worker('hdr-db06', 'hdr-db06', work_dir, python_path),
     Worker('hdr-db07', 'hdr-db07', work_dir, python_path),
-    Worker('hdr-db08', 'hdr-db08', work_dir, python_path),
-    Worker('hdr-db09', 'hdr-db09', work_dir, python_path),
-    Worker('hdr-db10', 'hdr-db10', work_dir, python_path),
-    Worker('hdr-db11', 'hdr-db11', work_dir, python_path),
-    Worker('hdr-db12', 'hdr-db12', work_dir, python_path),
 ]
 
 ###############################################################################
