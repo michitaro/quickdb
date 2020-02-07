@@ -2,14 +2,15 @@ from contextlib import contextmanager
 from functools import lru_cache, reduce
 import os
 import pickle
-from quickdb.datarake2.interface import Progress
-from quickdb.datarake.utils import keychain
+from quickdb.utils.evaluate import evaluate
+from typing import Dict
+from quickdb.datarake.interface import Progress, ProgressCB
 import socket
 import socketserver
 import threading
 import unittest
 
-from quickdb.datarake2.auth import AuthError, knock
+from quickdb.datarake.auth import AuthError, knock
 from quickdb.sspcatalog.errors import UserError
 from quickdb.test_config import REPO_DIR
 
@@ -48,7 +49,7 @@ class TestWorker(ConfigSetting):
         '''
         self.assertEqual(
             worker.process_request(make_env, {}, progress),
-            worker.process_request_simple(make_env, {}, progress),
+            process_request_simple(make_env, {}, progress),
         )
         self.assertGreater(len(history), 0)
         self.assertTrue(
@@ -159,7 +160,7 @@ class TestServer(ServerTest, ConfigSetting):
                 if not isinstance(res, api.Progress):
                     break
             self.assertIsInstance(res, ZeroDivisionError)
-            
+
 
 def get_tasks(env):
     return patches('pdr2_dud')
@@ -169,3 +170,10 @@ def get_tasks(env):
 def patches(rerun_name: str):
     from quickdb.sspcatalog.patch import Rerun
     return Rerun(f'{REPO_DIR}/{rerun_name}').patches[:100]
+
+
+def process_request_simple(make_env: str, shared: Dict,
+                           progress: ProgressCB = None):
+    from functools import reduce
+    env = evaluate(make_env, shared)
+    return reduce(env['reducer'], map(env['mapper'], config.tasks(env)))

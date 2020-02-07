@@ -1,4 +1,5 @@
 import json
+import logging
 import numpy
 import types
 import io
@@ -8,7 +9,7 @@ def dump(obj, out_stream):
     arrays = []
     class Encoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, numpy.ndarray):
+            if isinstance(obj, (numpy.ndarray, numpy.float32, numpy.int64)):
                 id = len(arrays)
                 arrays.append(obj)
                 return {'__numpy.ndarray__': True, 'id': id}
@@ -17,17 +18,20 @@ def dump(obj, out_stream):
             if isinstance(obj, numpy.bool_):
                 return not (obj == False)
             return json.JSONEncoder.default(self, obj)
-    layout = json.dumps(obj, cls=Encoder).encode('utf-8')
+    try:
+        layout = json.dumps(obj, cls=Encoder).encode('utf-8')
+    except:
+        logging.error(f'jsonnpy error: {obj}')
+        raise
     out_stream.write(f'{ len(layout) }\n'.encode('utf-8'))
     out_stream.write(layout)
-    arrays.append(0)
     numpy.savez(out_stream, *arrays)
 
 
 def dumps(obj):
     buf = io.BytesIO()
     dump(obj, buf)
-    return buf.getbuffer()
+    return buf.getvalue()
 
 
 def load(in_stream):

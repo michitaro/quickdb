@@ -2,7 +2,7 @@ from quickdb.sql2mapreduce.agg_functions import agg_functions
 from quickdb.sql2mapreduce.nonagg import run_nonagg_query
 from quickdb.sql2mapreduce.agg import run_agg_query
 from quickdb.sql2mapreduce.sqlast.sqlast import Expression, FuncCallExpression, Select
-from quickdb.datarake2.interface import ProgressCB, RunMakeEnv
+from quickdb.datarake.interface import ProgressCB, RunMakeEnv
 from typing import Dict, List, NamedTuple
 
 

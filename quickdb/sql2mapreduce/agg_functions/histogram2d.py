@@ -8,11 +8,12 @@ from quickdb.sql2mapreduce.agg import AggCall, AggContext
 from quickdb.sql2mapreduce.sqlast.sqlast import Expression, SqlError
 
 
-class HistogramAggCall(AggCall):
+class HistogramAgg2DCall(AggCall):
     def __init__(self, args: List[Expression], named_args: Dict[str, Expression], agg_star: bool):
-        if len(args) != 1:
+        if len(args) != 2:
             raise SqlError(f'function `histogram` accepts only 1 positional paramter')
-        self._array = args[0]
+        self._x = args[0]
+        self._y = args[1]
         self._bins: Optional[Expression] = named_args.pop('bins', None)
         self._range = named_args.pop('range', None)
         # self._weights: Optional[Expression] = named_args.pop('weights')
@@ -22,8 +23,9 @@ class HistogramAggCall(AggCall):
     @cached_property
     def subaggrs(self, ) -> List[AggCall]:
         if self._range is None:
-            self._minmax = MinMaxAggCall([self._array], {}, False)
-            return [self._minmax]
+            self._x_minmax = MinMaxAggCall([self._x], {}, False)
+            self._y_minmax = MinMaxAggCall([self._y], {}, False)
+            return [self._x_minmax, self._y_minmax]
         return []
 
     def mapper(self, context: AggContext):
@@ -34,11 +36,11 @@ class HistogramAggCall(AggCall):
                 raise SqlError(f'range must be a list: {row}')
             range = row
         else:
-            range = self._minmax.result(context)
-        return numpy.histogram(self._array(context), bins=bins, range=range)
+            range = (self._x_minmax.result(context), self._y_minmax.result(context))
+        return numpy.histogram2d(self._x(context), self._y(context), bins=bins, range=range)
 
     def reducer(self, a, b):
-        return a[0] + b[0], a[1]
+        return a[0] + b[0], a[1], a[2]
 
     def finalizer(self, a):
         return a

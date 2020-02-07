@@ -1,4 +1,4 @@
-from quickdb.datarake2.interface import Progress
+from quickdb.datarake.interface import Progress
 from typing import Any, Dict, NamedTuple
 
 

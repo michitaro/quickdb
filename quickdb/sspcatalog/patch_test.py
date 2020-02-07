@@ -81,7 +81,7 @@ class TestPatch(unittest.TestCase):
 
     def test_with_cache(self):
         patch = self.cosmos_patch
-        with patch.with_cache():
+        with patch.clear_cache():
             hits0 = patch._npy_cache.cache.cache_info().hits
             for _ in range(3):
                 patch('forced.i.psfflux_flux')

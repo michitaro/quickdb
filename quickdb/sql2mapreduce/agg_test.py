@@ -118,7 +118,7 @@ def patches(rerun_name: str):
 
 
 def run_make_env(make_env: str, shared: Dict, progress=None):
-    from quickdb.datarake.utils import evaluate
+    from quickdb.utils import evaluate
     from functools import reduce
     shared = through_serialization(shared)
     env = evaluate(make_env, shared)

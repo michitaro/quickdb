@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, List, NamedTuple, Optional
 
 import numpy
 
@@ -11,30 +11,32 @@ class MinMax(NamedTuple):
     max: Any
 
 
-MinMaxMapperResult = List[MinMax]
-
-
 class MinMaxAggCall(AggCall):
     def __init__(self, args: List[Expression], named_args: Dict[str, Expression], agg_star: bool):
-        if agg_star or len(named_args) > 0:  # pragma: no cover
-            raise SqlError(f'minmax does not accept named args: {named_args}')
-        self._args = args
+        if agg_star or len(args) != 1 or len(named_args) != 0:  # pragma: no cover
+            raise SqlError(f'minmax accepts only 1 argument')
+        self._array = args[0]
 
-    def mapper(self, context: AggContext) -> MinMaxMapperResult:
-        return [MinMax(numpy.nanmin(ea), numpy.nanmax(ea)) for ea in (a(context) for a in self._args)]
+    def mapper(self, context: AggContext):
+        ea = self._array(context)
+        fea = ea[numpy.isfinite(ea)]
+        if len(fea) > 0:
+            return MinMax(min=numpy.min(fea), max=numpy.max(fea))
 
-    def reducer(self, a: MinMaxMapperResult, b: MinMaxMapperResult) -> MinMaxMapperResult:
-        return [MinMax(min(aa.min, bb.min), max(aa.max, bb.max)) for aa, bb in zip(a, b)]
+    def reducer(self, a: Optional[MinMax], b: Optional[MinMax]):
+        if a and b:
+            return MinMax(min=min(a.min, b.min), max=max(a.max, b.max))
+        return a or b
 
-    def finalizer(self, a: MinMaxMapperResult):
-        return a
+    def finalizer(self, a):
+        return a or MinMax(min=numpy.nan, max=numpy.nan)
 
 
 class MinAggCall(MinMaxAggCall):
-    def finalizer(self, a: MinMaxMapperResult):
-        return a[0].min
+    def finalizer(self, a):
+        return a.min
 
 
 class MaxAggCall(MinMaxAggCall):
-    def finalizer(self, a: MinMaxMapperResult):
-        return a[0].max
+    def finalizer(self, a):
+        return a.max

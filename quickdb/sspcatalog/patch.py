@@ -32,7 +32,7 @@ PATCH_META = {
 class Rerun:
     def __init__(self, dirname: str):
         if not os.path.exists(dirname):
-            raise UserError(f'No such rerun: {dirname}')  # pragma: no cover
+            raise UserError(f'No such rerun: {os.path.basename(dirname)}')  # pragma: no cover
         self._dirname = dirname
 
     @cached_property
@@ -94,7 +94,7 @@ class Patch:
         '''
         if isinstance(where, slice):
             start = 0 if where.start is None else where.start
-            stop = min(self.size,  self.size if where.stop is None else where.stop )
+            stop = min(self.size,  self.size if where.stop is None else where.stop)
             indices = numpy.arange(start, stop, where.step)
         else:
             assert len(where.shape) == 1
@@ -112,7 +112,7 @@ class Patch:
         return self.column(colref)
 
     @contextlib.contextmanager
-    def with_cache(self):
+    def clear_cache(self):
         yield self
         self._npy_cache.cache.cache_clear()
 
@@ -186,7 +186,7 @@ class SlicedPatch(Patch):
 
     def column(self, colpath: str) -> numpy.ndarray:
         array = self._patch.column(colpath)
-        return array[..., self._indices] # type: ignore
+        return array[..., self._indices]  # type: ignore
 
     @cached_property
     def size(self):

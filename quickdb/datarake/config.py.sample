@@ -1,8 +1,8 @@
-import numpy
-from sspcatalog.patch import Rerun
 import subprocess
 from functools import lru_cache
+from typing import Any, Callable
 
+from ..sspcatalog.patch import Patch, Rerun
 
 ###############################################################################
 # master_addr
@@ -53,15 +53,15 @@ workers = [
     Worker('hdr-db12', 'hdr-db12', work_dir, python_path),
 ]
 
-this_worker: Worker = {worker.hostname: worker for worker in workers}.get(subprocess.check_output(['hostname']).strip()) # type: ignore
-
-
 ###############################################################################
 # tasks
 #
 # Each worker processes `tasks`.
 # `tasks` defines jobs a worker should process.
-###############################################################################
+######################################## #######################################
+hostname = subprocess.check_output(['hostname']).decode().strip()
+this_worker: Worker = {worker.hostname: worker for worker in workers}.get(hostname)  # type: ignore
+
 
 @lru_cache(maxsize=None)
 def cached_rerun(rerun_name: str):
@@ -74,11 +74,26 @@ def tasks(env):
 
 
 ###############################################################################
-# preload
+# mapper_wrapper
+#
+# mapper will be decorated with `mapper_wrapper`
+###############################################################################
+def mapper_wrapper(mapper: Callable[[Patch], Any]):
+    def wrapper(patch: Patch):
+        with patch.clear_cache():
+            return mapper(patch)
+    return wrapper
+
+
+###############################################################################
+# 
 #
 # lines below are executed in both master and workers,
 # so we can put global settings here.
 ###############################################################################
+def setup():
+    import numpy
+    numpy.seterr(all='ignore')
 
 
-numpy.seterr(all='ignore')
+setup()

@@ -24,7 +24,7 @@ def main():
     if args.update_code:
         if args.restart:
             workerctrl.stop()
-        list(parallel.map(update_code1, config.workers, len(config.workers)))
+        parallel.map(update_code1, config.workers)
         if args.restart:
             workerctrl.start()
             workerctrl.show_status()

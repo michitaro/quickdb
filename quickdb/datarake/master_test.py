@@ -1,5 +1,5 @@
 import os
-from quickdb.datarake2.interface import Progress
+from quickdb.datarake.interface import Progress
 import unittest
 
 from tqdm import tqdm

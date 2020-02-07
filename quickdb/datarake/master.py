@@ -1,79 +1,75 @@
 import concurrent.futures
-import logging
 import pickle
+from quickdb.utils.evaluate import evaluate
 import socket
-from typing import Dict
+from functools import reduce
+from itertools import repeat
+from typing import Callable, Dict, Iterable
 
-from quickdb.datarake2.interface import ProgressCB
+from quickdb.datarake.auth import knock
+from quickdb.datarake.interface import Progress, ProgressCB
+from quickdb.sspcatalog.errors import UserError
 
-from . import config, utils
+from . import config, api
 
 
 def run_make_env(make_env: str, shared: Dict = None, progress: ProgressCB = None):
     shared = {} if shared is None else shared
-    mapped_values = scatter(make_env, shared)
-    env = utils.evaluate(make_env, dict(shared))  # we need to copy context because of lazy evaluation of scatter
-    result = utils.reduce(env['reducer'], pick_result(mapped_values, None), env.get('initial'))
+    mapped_values = scatter(make_env, shared, progress)
+    env = evaluate(make_env, dict(shared))  # we need to pass a copy of `shared` because `evaluate` makes some changes on `shared`
+    finalizer = env.get('finalizer')
+    result = reduce(env['reducer'], (mv.value for mv in mapped_values))
+    if finalizer:
+        result = finalizer(result)
     return result
 
 
-def pick_result(a, time):
-    for worker, v in zip(config.workers, a):
-        if time is not None:
-            time[worker.host] = v['time']
-        yield v['result']
+def scatter(make_env: str, shared: Dict, progress: ProgressCB = None) -> Iterable[api.WorkerResult]:
+    progresses: Dict[config.Worker, Progress] = {}
 
+    def progress1(worker: config.Worker, p: Progress):
+        progresses[worker] = p
+        if progress:
+            progress(reduce(lambda a, b: Progress(done=a.done + b.done, total=a.total + b.total), progresses.values()))
 
-def scatter(make_env, context):
-    from itertools import repeat
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(config.workers)) as pool:
-        return pool.map(pack_args(post_request), zip(
+        return pool.map(unpack_args(post_request), zip(
             config.workers,
             repeat(make_env),
-            repeat(context),
+            repeat(shared),
+            repeat(progress1),
         ))
 
 
-def pack_args(f):
+def unpack_args(f):
     def g(args):
         return f(*args)
     return g
 
 
-def post_request(worker, make_env, context):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((worker.host, worker.port))
-            rfile = sock.makefile('rb')
-            wfile = sock.makefile('wb', buffering=0)
-            nonce = rfile.readline().strip()
-            wfile.write(utils.hash(nonce) + '\n'.encode('utf-8'))
-            auth_line = rfile.readline().decode('utf-8')
-            if auth_line.startswith('ng:'):
-                reason = auth_line.split(':', 1)[1]
-                raise RuntimeError(f'{worker.host}: {reason}')
+def post_request(worker, make_env, shared, progress1: Callable[[config.Worker, float], float]):
+    with socket.socket() as sock:
+        sock.connect((worker.host, worker.port))
+        rfile = sock.makefile('rb')
+        wfile = sock.makefile('wb', buffering=0)
+        knock(wfile, rfile)
+        request = api.WorkerRequest(make_env, shared)
+        pickle.dump(request, wfile)
+        while True:
+            res = pickle.load(rfile)
+            if isinstance(res, api.Progress):
+                progress1(worker, res)
             else:
-                request = dict(make_env=make_env, context=context)
-                pickle.dump(request, wfile)
-                response = pickle.load(rfile)
-                error = response.get('error')
-                if error is not None:
-                    raise RuntimeError(f'@{worker.host}: {error}')
-            return response
-    except ConnectionError:
-        logging.error(f'Connection Error on {worker.host}')
-        raise
-
-
-if __name__ == '__main__':
-    make_env = '''
-        rerun = 'pdr2_dud'
-    
-        def mapper(patch):
-            return patch.size
-
-        def reducer(acc, val):
-            return acc + val
-    '''
-
-    print(run_make_env(make_env))
+                break
+        if isinstance(res, api.WorkerResult):
+            return res
+        elif isinstance(res, api.UserError):
+            raise UserError(res.reason)
+        else:
+            raise RuntimeError(res)
+        
+        # raise res
+        # error = response.get('error')
+        # if error is not None:
+        #     raise RuntimeError(f'@{worker.host}: {error}')
+        # return response

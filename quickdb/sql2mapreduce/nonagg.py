@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import numpy
 
-from quickdb.datarake2.interface import ProgressCB, RunMakeEnv
+from quickdb.datarake.interface import ProgressCB, RunMakeEnv
 from quickdb.sql2mapreduce.sqlast.sqlast import Select, SqlError
 
 from ..sspcatalog.patch import Patch
