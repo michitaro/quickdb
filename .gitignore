@@ -1,5 +1,6 @@
 __pycache__
 *.pyc
+/._*
 .ipynb_checkpoints
 /sphinx/_build
 /.vscode
@@ -7,4 +8,4 @@ __pycache__
 /Pipfile.lock
 /.coverage
 /htmlcov
-/._htmlcov
+/hscmap

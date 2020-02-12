@@ -1,3 +1,4 @@
 {
-  "typingsPath": "./typings"
+  "typingsPath": "./typings",
+  "reportMissingImports": false
 }

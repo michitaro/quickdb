@@ -64,13 +64,13 @@ def _wait_job(job_id: str, progress: ProgressCB, polling_interval: float):
         time.sleep(polling_interval)
 
 
-def post_sql_with_tqdm(sql: str, shared: Dict=None, polling_interval=0.1):
+def post_sql_with_tqdm(sql: str, shared: Dict=None, polling_interval=0.1, ncols=None):
     import contextlib
     from tqdm import tqdm
 
     @contextlib.contextmanager
     def progress_bar():
-        with tqdm(total=1, ncols=100) as pbar:
+        with tqdm(total=1, ncols=ncols) as pbar:
             def progress(p):
                 pbar.total = p.total
                 pbar.n = p.done

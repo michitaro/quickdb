@@ -30,7 +30,7 @@ class TestPatch(unittest.TestCase):
         # forced_universal
         self.assertTrue(array_equal(
             patch.column('forced.coord'),
-            numpy.load(f'{patch._dirname}/forced/universal/coord.npy'),
+            numpy.load(f'{patch._dirname}/forced/universal/coord.npy') / (180.0*3600.0 / numpy.pi),
         ))
         # forced_filter
         self.assertTrue(array_equal(
@@ -40,7 +40,7 @@ class TestPatch(unittest.TestCase):
         # meas_position
         self.assertTrue(array_equal(
             patch.column('meas.i_coord'),
-            numpy.load(f'{patch._dirname}/meas/position/i_coord.npy'),
+            numpy.load(f'{patch._dirname}/meas/position/i_coord.npy') / (180.0*3600.0 / numpy.pi),
         ))
         # meas_filter
         self.assertTrue(array_equal(
@@ -51,6 +51,11 @@ class TestPatch(unittest.TestCase):
         self.assertTrue(array_equal(
             patch.column(('meas', 'i', 'cmodel_flux')),
             numpy.load(f'{patch._dirname}/meas/HSC-I/cmodel_flux.npy'),
+        ))
+        # meas_filter magnitude
+        self.assertTrue(array_equal(
+            patch.column(('meas', 'i', 'cmodel_mag')),
+            flux2mag(numpy.load(f'{patch._dirname}/meas/HSC-I/cmodel_flux.npy')),
         ))
 
     def test_column_flag(self):
@@ -79,14 +84,14 @@ class TestPatch(unittest.TestCase):
             patch.column('forced.z.psfflux_flux'),
         ))
 
-    def test_with_cache(self):
-        patch = self.cosmos_patch
-        with patch.clear_cache():
-            hits0 = patch._npy_cache.cache.cache_info().hits
-            for _ in range(3):
-                patch('forced.i.psfflux_flux')
-            self.assertEqual(patch._npy_cache.cache.cache_info().hits, hits0 + 3)
-        self.assertEqual(patch._npy_cache.cache.cache_info().currsize, 0)
+    # def test_with_cache(self):
+    #     patch = self.cosmos_patch
+    #     with patch.clear_cache():
+    #         hits0 = patch._npy_cache.cache.cache_info().hits
+    #         for _ in range(3):
+    #             patch('forced.i.psfflux_flux')
+    #         self.assertEqual(patch._npy_cache.cache.cache_info().hits, hits0 + 3)
+    #     self.assertEqual(patch._npy_cache.cache.cache_info().currsize, 0)
 
     def test_slice_with_boolean_array(self):
         patch = self.cosmos_patch
@@ -152,7 +157,7 @@ class TestPatch(unittest.TestCase):
         sliced2 = sliced[numpy.arange(n)]
         self.assertTrue(array_equal(
             sliced2('forced.coord'),
-            sliced('forced.coord')[:, :n],
+            sliced('forced.coord')[:, :n],  # type: ignore
         ))
 
     def test_nested_slice_with_slice(self):
@@ -191,3 +196,9 @@ def find_by_dirname(rerun: Rerun, dirname: str):
         if os.path.basename(p._dirname) == dirname:
             return p
     raise RuntimeError(f'Patch not found: {dirname}')
+
+
+def flux2mag(a: numpy.ndarray):
+    # m_{\text{AB}}\approx -2.5\log _{10}\left({\frac {f_{\nu }}{\text{Jy}}}\right)+8.90
+    # Jy = 3631 jansky
+    return -2.5 * numpy.log10(a * (10**-9) / 3631.)

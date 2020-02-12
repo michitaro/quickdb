@@ -24,6 +24,5 @@ class TestMinMaxAggCall(unittest.TestCase):
         SELECT minmax(forced.i.psfflux_flux) FROM pdr2_dud
         '''
         result = run_test_agg_sql(sql)
-        print(result)
         self.assertFalse(math.isnan(result.group_by[None][0].min))
         self.assertFalse(math.isnan(result.group_by[None][0].max))
