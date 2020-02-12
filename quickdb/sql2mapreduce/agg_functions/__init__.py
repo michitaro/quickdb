@@ -1,3 +1,4 @@
+from quickdb.sql2mapreduce.agg_functions.crossmatch import CrossMatchAggCall
 from typing import Dict, Tuple, Type
 
 from quickdb.sql2mapreduce.agg import AggCall
@@ -15,5 +16,6 @@ agg_functions: Dict[Tuple[str, ...], Type[AggCall]] = {
     ('minmax', ): MinMaxAggCall,
     ('histogram', ): HistogramAggCall,
     ('histogram2d', ): HistogramAgg2DCall,
+    ('crossmatch',): CrossMatchAggCall,
     ('sleep', ): SleepAggCall
 }
