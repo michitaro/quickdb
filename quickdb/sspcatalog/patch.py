@@ -1,9 +1,9 @@
 import contextlib
+from functools import lru_cache
 import glob
 import os
 import pickle
-from functools import lru_cache
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy
 
@@ -121,6 +121,21 @@ class Patch:
         '''
         Loads a npy file specified by colpath
         '''
+        dirname, meta, colname = self._resolve_table(colpath)
+        # apply transforms
+        if colname.endswith('_mag'):
+            flux_col = f'{colname[:-4]}_flux'
+            if flux_col in meta['dtype']:
+                return lambda: flux2mag(self._load_npy(meta, dirname, flux_col))
+        if colname.endswith('coord'):
+            return lambda: self._load_npy(meta, dirname, colname) / (180.0*3600.0 / numpy.pi)
+        if colname.endswith('coord_ra'):
+            return lambda: coord_ra(self._load_npy(meta, dirname, colname[:-3]))
+        if colname.endswith('coord_dec'):
+            return lambda: coord_dec(self._load_npy(meta, dirname, colname[:-4]))
+        return lambda: self._load_npy(meta, dirname, colname)
+
+    def _resolve_table(self, colpath: Colpath):
         ref: Tuple[str, ...]
         if isinstance(colpath, tuple):
             ref = colpath
@@ -149,14 +164,17 @@ class Patch:
         else:  # pragma: no cover
             raise ColumnNotFoundError(f'Invalid column specification: {colpath}')
         colname = ref[-1]
+        return dirname, meta, colname
+
+    def _load_npy(self, meta: Dict, dirname: str, colname: str) -> numpy.ndarray:
         if os.path.exists(dirname):
             if colname in meta['flags']:
                 i, j = meta['flags'][colname]
-                return lambda: self._npy_cache[f'{dirname}/flags-{i}.npy'] & (1 << j) != 0
+                return self._npy_cache[f'{dirname}/flags-{i}.npy'] & (1 << j) != 0
             else:
                 if colname not in meta['dtype']:  # pragma: no cover
                     raise ColumnNotFoundError(f'No such column: {colname}')
-                return lambda: self._npy_cache[f'{dirname}/{colname}.npy']
+                return self._npy_cache[f'{dirname}/{colname}.npy']
         else:
             if colname in meta['flags']:
                 dtype, shape = numpy.dtype('bool'), [self.size]
@@ -165,7 +183,7 @@ class Patch:
                     raise ColumnNotFoundError(f'No such column: {colname}')
                 dtype, shape = meta['dtype'][colname]
                 shape = [self.size, *shape[1:]]
-            return lambda: nans(dtype, shape)
+            return nans(dtype, shape)
 
 
 class SlicedPatch(Patch):
@@ -184,9 +202,8 @@ class SlicedPatch(Patch):
     def __getitem__(self, where: Union[numpy.ndarray, slice]) -> 'SlicedPatch':
         return SlicedPatch(self._patch, self._indices[where])
 
-    def column(self, colpath: str) -> numpy.ndarray:
-        array = self._patch.column(colpath)
-        return array[..., self._indices]  # type: ignore
+    def _load_npy(self, meta: Dict, dirname: str, colname: str) -> numpy.ndarray:
+        return self._patch._load_npy(meta, dirname, colname)[..., self._indices]  # type: ignore
 
     @cached_property
     def size(self):
@@ -214,3 +231,19 @@ class NpyCache:
     @property
     def cache(self):
         return self.__getitem__
+
+
+def flux2mag(a: numpy.ndarray):
+    # m_{\text{AB}}\approx -2.5\log _{10}\left({\frac {f_{\nu }}{\text{Jy}}}\right)+8.90
+    # Jy = 3631 jansky
+    return -2.5 * numpy.log10(a * (10**-9) / 3631.)
+
+
+def coord_ra(XYZ):
+    X, Y, Z = XYZ
+    return numpy.arctan2(Y, X)
+
+
+def coord_dec(XYZ):
+    X, Y, Z = XYZ
+    return numpy.arctan2(Z, numpy.sqrt(X*X + Y*Y))
