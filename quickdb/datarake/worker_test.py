@@ -47,8 +47,10 @@ class TestWorker(ConfigSetting):
             return a + b
 
         '''
+        job = worker.Job(api.WorkerRequest(make_env, {}))
+
         self.assertEqual(
-            worker.process_request(make_env, {}, progress),
+            job.run(progress),
             process_request_simple(make_env, {}, progress),
         )
         self.assertGreater(len(history), 0)
@@ -66,7 +68,7 @@ class TestWorker(ConfigSetting):
 
         '''
         with self.assertRaises(UserError):
-            worker.process_request(make_env, {})
+            worker.Job(api.WorkerRequest(make_env, {})).run()
 
 
 class ServerTest(unittest.TestCase):
@@ -119,7 +121,7 @@ class TestServer(ServerTest, ConfigSetting):
             make_env = '''
             def mapper(patch):
                 return patch.size
-            
+
             def reducer(a, b):
                 return a + b
             '''
@@ -148,7 +150,7 @@ class TestServer(ServerTest, ConfigSetting):
             make_env = '''
             def mapper(patch):
                 0 / 0
-            
+
             def reducer(a, b):
                 return a + b
             '''
@@ -160,6 +162,34 @@ class TestServer(ServerTest, ConfigSetting):
                 if not isinstance(res, api.Progress):
                     break
             self.assertIsInstance(res, ZeroDivisionError)
+
+    def test_interrupt(self):
+        with self.server() as (wfile, rfile):
+            import time
+
+            knock(wfile, rfile)
+            make_env = '''
+            import time
+            
+            def mapper(patch):
+                time.sleep(1)
+                return patch.size
+            
+            def reducer(a, b):
+                return a + b
+
+            chunksize = 1
+            '''
+
+            pickle.dump(api.WorkerRequest(make_env, {}), wfile)
+            time.sleep(0.1)
+            pickle.dump(api.Interrupt(), wfile)
+            wfile.close()
+            while True:
+                res = pickle.load(rfile)
+                if not isinstance(res, api.Progress):
+                    break
+            self.assertIsInstance(res, api.UserError)
 
 
 def get_tasks(env):

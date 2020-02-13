@@ -1,20 +1,22 @@
 import argparse
 import contextlib
-from itertools import islice
 import logging
 import multiprocessing
 import os
 import pickle
-from quickdb.utils.evaluate import evaluate
 import socketserver
 import subprocess
-from typing import Dict, Generic, Iterable, List, Tuple
+import threading
+from typing import Callable, Dict, Tuple
 
+from quickdb.datarake.api import WorkerRequest
 from quickdb.datarake.auth import AuthError, authenticate
 from quickdb.datarake.interface import Progress, ProgressCB
 from quickdb.sql2mapreduce.sqlast.sqlast import SqlError
 from quickdb.sspcatalog.errors import UserError
-from quickdb.sspcatalog.patch import Patch
+from quickdb.utils.evaluate import evaluate
+from quickdb.utils.interruptableselect import (InterruptableSelect,
+                                               SelectInterrupted)
 
 from . import api, config
 
@@ -48,75 +50,99 @@ def main():
 
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
-        def progress(p: Progress):
-            pickle.dump(p,  self.wfile)
-            self.wfile.flush()
-
         try:
             authenticate(self)
         except AuthError:
             return
 
+        def progress(p: Progress):
+            pickle.dump(p,  self.wfile)
+            self.wfile.flush()
+
         request: api.WorkerRequest = pickle.load(self.rfile)
-
-        try:
-            result = process_request(request. make_env, request.shared, progress)
-        except (UserError, SqlError) as e:
-            pickle.dump(api.UserError(str(e)), self.wfile)
-        except Exception as e:
-            pickle.dump(e, self.wfile)
-        else:
-            pickle.dump(api.WorkerResult(result), self.wfile)
-
-
-def get_pool(n_procs=None):
-    if get_pool.pool is None:
-        get_pool.pool = multiprocessing.Pool(n_procs)
-    return get_pool.pool
-
-
-get_pool.pool = None
-
-
-def process_request(make_env: str, shared: Dict,
-                    progress: ProgressCB = None):
-    process_request.request_id += 1
-    env = evaluate(make_env, dict(shared))  # pass a copy of `shared` because `evaluate` affects passed `shared` object.
-    reducer = env['reducer']
-    tasks = config.tasks(env)
-    pool = get_pool()
-    chunksize = min(len(tasks) // multiprocessing.cpu_count(), 1023)
-    chunksize += 1
-    items = [(process_request.request_id, make_env, shared, slice(start, start + chunksize)) for start in range(0, len(tasks), chunksize)]
-    result = None
-    for i, value in enumerate(pool.imap_unordered(_process_partial_tasks, items)):
-        result = value if i == 0 else reducer(result, value)
-        if progress:
-            progress(Progress(done=i + 1, total=len(items)))
-    return result
+        job = Job(request)
+        with InterruptableSelect([self.rfile], [], []) as select:
+            def stop():
+                try:
+                    select.wait()
+                except SelectInterrupted:
+                    pass
+                else:  # got stop message
+                    job.interrupt()
+            stop_th = threading.Thread(target=stop)
+            stop_th.start()
+            try:
+                result = job.run(progress)
+            except (UserError, SqlError) as e:
+                pickle.dump(api.UserError(str(e)), self.wfile)
+            except Exception as e:
+                pickle.dump(e, self.wfile)
+            else:
+                select.interrupt()
+                pickle.dump(api.WorkerResult(result), self.wfile)
+            finally:
+                select.interrupt()
+                stop_th.join()
 
 
-process_request.request_id = 0
+class GetPool:
+    def __init__(self):
+        self._pool = None
+
+    def __call__(self, n_procs=None):
+        if self._pool is None:
+            self._pool = multiprocessing.Pool(n_procs)
+        return self._pool
 
 
-def _process_partial_tasks(args: Tuple[int, str, Dict, slice]):
-    request_id, make_env, shared, part = args
-    from functools import reduce
-    env = cached_evaluate(request_id, make_env, shared)
-    tasks = config.tasks(env)
-    mapper = config.mapper_wrapper(env['mapper'])
-    reducer = env['reducer']
-    return reduce(reducer, map(mapper, tasks[part]))
+get_pool = GetPool()
+
+
+class Job:
+    def __init__(self, request: api.WorkerRequest):
+        self._request = request
+        self._interrupted = False
+
+    def run(self, progress: ProgressCB = None):
+        make_env = self._request.make_env
+        shared = self._request.shared
+        env = evaluate(make_env, dict(shared))  # pass a copy of `shared` because `evaluate` affects passed `shared` object.
+        reducer = env['reducer']
+        tasks = config.tasks(env)
+        pool = get_pool()
+        chunksize = env.get('chunksize') or min(len(tasks) // multiprocessing.cpu_count() + 1, 1024)
+        items = [(self, make_env, shared, slice(start, start + chunksize)) for start in range(0, len(tasks), chunksize)]
+        result = None
+        for i, value in enumerate(pool.imap_unordered(Job._process_partial_tasks, items)):
+            if self._interrupted:
+                raise UserError('Cancelled')
+            result = value if i == 0 else reducer(result, value)
+            if progress:
+                progress(Progress(done=i + 1, total=len(items)))
+        return result
+
+    def interrupt(self):
+        self._interrupted = True
+
+    @staticmethod
+    def _process_partial_tasks(args: Tuple['Job', str, Dict, slice]):
+        job, make_env, shared, part = args
+        from functools import reduce
+        env = cached_evaluate(job, make_env, shared)
+        tasks = config.tasks(env)
+        mapper = config.mapper_wrapper(env['mapper'])
+        reducer = env['reducer']
+        return reduce(reducer, map(mapper, tasks[part]))
 
 
 class CachedEvaluate:
     def __init__(self):
-        self._request_id = -1
+        self._job = None
         self._cache = None
 
-    def __call__(self, request_id: int, make_env: str, shared: Dict):
-        if self._request_id != request_id:
-            self._request_id = request_id
+    def __call__(self, job: Job, make_env: str, shared: Dict):
+        if self._job is not job:
+            self._job = job
             self._cache = evaluate(make_env, shared)
         return self._cache
 

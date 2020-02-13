@@ -11,5 +11,9 @@ class WorkerResult(NamedTuple):
     value: Any
 
 
+class Interrupt(NamedTuple):
+    ...
+
+
 class UserError(NamedTuple):
     reason: str
