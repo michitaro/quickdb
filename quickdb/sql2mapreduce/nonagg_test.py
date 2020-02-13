@@ -87,7 +87,7 @@ def run_test_nonagg_sql(sql: str, shared: Dict = None):
     return run_nonagg_query(select, run_make_env, shared=shared)
 
 
-def run_make_env(make_env: str, shared: Dict, progress=None):
+def run_make_env(make_env: str, shared: Dict, progress=None, interrupt_notifiyer=None):
     from quickdb.utils import evaluate
     from functools import reduce
     shared = through_serialization(shared)

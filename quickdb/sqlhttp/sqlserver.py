@@ -1,3 +1,4 @@
+from quickdb.datarake.safeevent import SafeEvent
 from quickdb.sql2mapreduce.sqlast.sqlast import SqlError
 import secrets
 import traceback
@@ -41,7 +42,15 @@ def show_job(job_id: str):
         abort(404)
     else:
         return jsonnpy_response(resonse_for(job))
-        
+
+
+@app.route('/jobs/<job_id>', methods=['DELETE'])
+def stop_job(job_id: str):
+    job = jobs.get(job_id)
+    print(job)
+    if job and job.interrupt:
+        job.interrupt.set()
+        return jsonnpy_response({})
 
 
 def jsonnpy_response(data):
@@ -79,17 +88,20 @@ class Job:
         self.progress = None
         self.result = None
         self.error = None
+        self.interrupt = None
         jobs[self.id] = self
-        th = threading.Thread(target=self._run)
+        th = threading.Thread(target=self._run, args=(self,))
         th.start()
         self._th = th
 
     def _update_progress(self, p: Progress):
         self.progress = p
 
-    def _run(self):
+    def _run(self, job):
         try:
-            self.result = run_sql(self._sql, run_make_env, shared=self._shared, progress=self._update_progress)
+            with SafeEvent() as interrupt:
+                self.interrupt = interrupt
+                self.result = run_sql(self._sql, run_make_env, shared=self._shared, progress=self._update_progress, interrupt_notifiyer=interrupt)
         except (UserError, SqlError) as e:
             self.error = str(e)
         except:

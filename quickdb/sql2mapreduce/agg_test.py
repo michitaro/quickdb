@@ -1,4 +1,5 @@
 from functools import lru_cache
+from quickdb.datarake.safeevent import SafeEvent
 from typing import Dict
 import unittest
 
@@ -117,7 +118,7 @@ def patches(rerun_name: str):
     return Rerun(f'{REPO_DIR}/{rerun_name}').patches[:10]
 
 
-def run_make_env(make_env: str, shared: Dict, progress=None):
+def run_make_env(make_env: str, shared: Dict, progress=None, interrupt_notifiyer: SafeEvent = None):
     from quickdb.utils import evaluate
     from functools import reduce
     shared = through_serialization(shared)

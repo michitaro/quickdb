@@ -1,3 +1,4 @@
+from quickdb.datarake.safeevent import SafeEvent
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import numpy
@@ -14,7 +15,7 @@ class NonAggQueryResult(NamedTuple):
     target_names: List[str]
 
 
-def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None) -> NonAggQueryResult:
+def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None) -> NonAggQueryResult:
     '''
     Args:
         select (Select): Select object to be run.
@@ -29,7 +30,7 @@ def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = No
         rerun, mapper, reducer, finalizer = nonagg_env(select, shared)
     '''
     env_context = {'select': select, 'shared': shared}
-    target_list = run_make_env(make_env, env_context, progress)
+    target_list = run_make_env(make_env, env_context, progress, interrupt_notifiyer)
 
     return NonAggQueryResult(
         target_list,

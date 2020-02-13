@@ -1,15 +1,16 @@
 import http.client
-from quickdb.datarake.interface import Progress
+import signal
 import time
 from collections import OrderedDict
-from typing import Dict, List, NamedTuple
+from contextlib import contextmanager
+from typing import Callable, Dict, List, NamedTuple
 
-from quickdb.datarake.interface import ProgressCB
+from quickdb.datarake.interface import Progress, ProgressCB
 
-from . import jsonnpy
-from . import config
+from . import config, jsonnpy
 
-def post_sql(sql, shared: Dict=None, progress: ProgressCB = None, polling_interval=1):
+
+def post_sql(sql, shared: Dict = None, progress: ProgressCB = None, polling_interval=1):
     conn = http.client.HTTPConnection(config.server_addr)
     try:
         conn.request("POST", '/jobs',
@@ -35,10 +36,10 @@ def post_sql(sql, shared: Dict=None, progress: ProgressCB = None, polling_interv
 
 
 def _wait_job(job_id: str, progress: ProgressCB, polling_interval: float):
-    def get():
+    def kick(method: str):
         try:
             conn = http.client.HTTPConnection(config.server_addr)
-            conn.request("GET", f'/jobs/{job_id}',
+            conn.request(method, f'/jobs/{job_id}',
                          headers={"Content-type": "application/hscssp-jsonnpy", "Accept": "application/hscssp-jsonnpy"})
             response = conn.getresponse()
             if response.status != 200:
@@ -47,24 +48,25 @@ def _wait_job(job_id: str, progress: ProgressCB, polling_interval: float):
         finally:
             conn.close()
         return res
+    
+    with trap_keyboard_interrupt(lambda *args: kick('DELETE')):
+        last_total = 1
+        while True:
+            res = kick('GET')
+            if res['status'] in {'done', 'error'}:
+                progress(Progress(done=last_total, total=last_total))
+                return res
+            if res['status'] == 'running':
+                p = res['progress']
+                if p:
+                    last_total = p['total']
+                    progress(Progress(done=p['done'], total=p['total']))
+            else:
+                assert res['status'] == 'done', f'Unknown status: {res["status"]}'
+            time.sleep(polling_interval)
 
-    last_total = 1
-    while True:
-        res = get()
-        if res['status'] in {'done', 'error'}:
-            progress(Progress(done=last_total, total=last_total))
-            return res
-        if res['status'] == 'running':
-            p = res['progress']
-            if p:
-                last_total = p['total']
-                progress(Progress(done=p['done'], total=p['total']))
-        else:
-            assert res['status'] == 'done', f'Unknown status: {res["status"]}'
-        time.sleep(polling_interval)
 
-
-def post_sql_with_tqdm(sql: str, shared: Dict=None, polling_interval=0.1, ncols=None):
+def post_sql_with_tqdm(sql: str, shared: Dict = None, polling_interval=0.1, ncols=None):
     import contextlib
     from tqdm import tqdm
 
@@ -79,6 +81,14 @@ def post_sql_with_tqdm(sql: str, shared: Dict=None, polling_interval=0.1, ncols=
 
     with progress_bar() as progress:
         return post_sql(sql, shared, progress, polling_interval)
+
+
+@contextmanager
+def trap_keyboard_interrupt(cb: Callable):
+    default_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, cb)
+    yield
+    signal.signal(signal.SIGINT, default_handler)
 
 
 class QueryResult(NamedTuple):

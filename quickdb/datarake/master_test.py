@@ -1,8 +1,11 @@
 import os
-from quickdb.datarake.interface import Progress
+import time
 import unittest
+from multiprocessing import Event
 
 from tqdm import tqdm
+
+from quickdb.datarake.interface import Progress
 
 from . import master
 
@@ -35,3 +38,4 @@ class TestMaster(unittest.TestCase):
             result = master.run_make_env(make_env, {}, progress)
 
         print(result[0])
+

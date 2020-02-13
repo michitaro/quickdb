@@ -1,3 +1,4 @@
+from quickdb.datarake.safeevent import SafeEvent
 from quickdb.sql2mapreduce.agg_functions import agg_functions
 from quickdb.sql2mapreduce.nonagg import run_nonagg_query
 from quickdb.sql2mapreduce.agg import run_agg_query
@@ -11,10 +12,10 @@ class QueryResult(NamedTuple):
     target_list: List
 
 
-def run_sql(sql: str, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None):
+def run_sql(sql: str, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None):
     select = Select(sql)
     if is_agg_query(select):
-        result = run_agg_query(select, run_make_env, shared, progress)
+        result = run_agg_query(select, run_make_env, shared, progress=progress, interrupt_notifiyer=interrupt_notifiyer)
         group_values = []
         target_list = [[] for i in result.target_names]
         for gv, t in result.group_by.items():
@@ -26,7 +27,7 @@ def run_sql(sql: str, run_make_env: RunMakeEnv, shared: Dict = None, progress: P
             [group_values] + target_list,
         )
     else:
-        result = run_nonagg_query(select, run_make_env, shared, progress)
+        result = run_nonagg_query(select, run_make_env, shared, progress=progress, interrupt_notifiyer=interrupt_notifiyer)
         return QueryResult(
             result.target_names,
             result.target_list,

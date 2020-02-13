@@ -62,15 +62,15 @@ class Handler(socketserver.StreamRequestHandler):
         request: api.WorkerRequest = pickle.load(self.rfile)
         job = Job(request)
         with InterruptableSelect([self.rfile], [], []) as select:
-            def stop():
+            def wait_for_interrupt():
                 try:
                     select.wait()
                 except SelectInterrupted:
                     pass
-                else:  # got stop message
+                else:  # got interrupt message
                     job.interrupt()
-            stop_th = threading.Thread(target=stop)
-            stop_th.start()
+            wait_for_interrupt_th = threading.Thread(target=wait_for_interrupt)
+            wait_for_interrupt_th.start()
             try:
                 result = job.run(progress)
             except (UserError, SqlError) as e:
@@ -82,7 +82,7 @@ class Handler(socketserver.StreamRequestHandler):
                 pickle.dump(api.WorkerResult(result), self.wfile)
             finally:
                 select.interrupt()
-                stop_th.join()
+                wait_for_interrupt_th.join()
 
 
 class GetPool:

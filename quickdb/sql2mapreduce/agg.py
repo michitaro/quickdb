@@ -1,4 +1,5 @@
 import abc
+from quickdb.datarake.safeevent import SafeEvent
 from typing import (
     Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union, cast)
 
@@ -85,7 +86,7 @@ class PickOneAggCall(AggCall):
         return a
 
 
-def run_agg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None):
+def run_agg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None):
     from .agg_functions import agg_functions
 
     make_env = '''
@@ -119,7 +120,7 @@ def run_agg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None,
             if progress:
                 progress(Progress(done=p1.done + i * p1.total, total=p1.total * len(aggs)))
         env_context = {'agg': agg, 'select': select, 'agg_results': agg_results, 'shared': shared}
-        result = run_make_env(make_env, env_context, progress1)
+        result = run_make_env(make_env, env_context, progress1, interrupt_notifiyer)
         agg_results[agg] = result
         if e:
             agg_results[e] = result
