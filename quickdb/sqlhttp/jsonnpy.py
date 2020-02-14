@@ -55,7 +55,7 @@ def load(in_stream):
     arrays = _npz_loads(in_stream.read(npz_size))
     def as_array(d):
         if '__numpy.ndarray__' in d:
-            return arrays[f'arr_{ d["id"] }']
+            return arrays[f'arr_{ d["id"] }'] # type: ignore
         return d
     layout = json.loads(layout_json, object_hook=as_array)
     return layout

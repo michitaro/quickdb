@@ -7,6 +7,9 @@ coverage:
 	pipenv run coverage run --source=. --omit='*_test.py' -m unittest discover -p '*_test.py'
 	pipenv run coverage html
 
+typecheck:
+	pyright -p .
+
 docs:
 	make -C sphinx html
 

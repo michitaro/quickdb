@@ -1,4 +1,10 @@
 {
   "typingsPath": "./typings",
-  "reportMissingImports": false
+  "reportMissingImports": false,
+  "include": [
+    "quickdb"
+  ],
+  "exclude": [
+    "quickdb/repobuilder/**/*.py"
+  ]
 }

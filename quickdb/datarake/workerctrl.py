@@ -68,10 +68,11 @@ def restart():
 
 
 def kill_by_port():
-    def cmd(worker):
+    def get_port(worker):
         return ['bash', '-c', f"""'netstat -nlp | grep 0.0.0.0:{worker.port}'"""]
-    pid_re = re.compile('\s(\d+)/python\s*')
-    for worker, returncode, out, err in batch.ssh(cmd):
+    pid_re = re.compile(r'\s(\d+)/python\s*')
+
+    for worker, returncode, out, err in batch.ssh(get_port):
         m = pid_re.search(out.decode('utf-8'))
         if m:
             pid = m.group(1)
@@ -80,10 +81,10 @@ def kill_by_port():
             subprocess.check_call(['ssh', worker.host, 'kill', '-9', pid])
             subprocess.check_call(['ssh', worker.host, 'rm', '-rf', f'{worker.work_dir}/.lock', f'{worker.work_dir}/pid'])
 
-    def cmd(worker):
+    def rm_pid(worker):
         return ['bash', '-c', f"""'cd {worker.work_dir}/python_path
                                    rm -rf pid .lock'"""]
-    batch.show_result(batch.ssh(cmd))
+    batch.show_result(batch.ssh(rm_pid))
 
 
 if __name__ == '__main__':
