@@ -7,6 +7,7 @@ import io
 
 def dump(obj, out_stream):
     arrays = []
+
     class Encoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, (numpy.ndarray, numpy.float32, numpy.int64)):
@@ -19,13 +20,26 @@ def dump(obj, out_stream):
                 return not (obj == False)
             return json.JSONEncoder.default(self, obj)
     try:
-        layout = json.dumps(obj, cls=Encoder).encode('utf-8')
+        layout = json.dumps(obj, cls=Encoder).encode()
     except:
         logging.error(f'jsonnpy error: {obj}')
         raise
-    out_stream.write(f'{ len(layout) }\n'.encode('utf-8'))
+    out_stream.write(f'{ len(layout) }\n'.encode())
     out_stream.write(layout)
-    numpy.savez(out_stream, *arrays)
+    npz = _npz_dumps(arrays)
+    out_stream.write(f'{ len(npz) }\n'.encode())
+    out_stream.write(npz)
+
+
+def _npz_dumps(arrays):
+    bio = io.BytesIO()
+    numpy.savez(bio, *arrays)
+    return bio.getvalue()
+
+
+def _npz_loads(b: bytes):
+    bio = io.BytesIO(b)
+    return numpy.load(bio)
 
 
 def dumps(obj):
@@ -35,10 +49,10 @@ def dumps(obj):
 
 
 def load(in_stream):
-    size_str = in_stream.readline()
-    layout_size = int(size_str)
+    layout_size = int(in_stream.readline())
     layout_json = in_stream.read(layout_size)
-    arrays = numpy.load(in_stream, allow_pickle=False)
+    npz_size = int(in_stream.readline())
+    arrays = _npz_loads(in_stream.read(npz_size))
     def as_array(d):
         if '__numpy.ndarray__' in d:
             return arrays[f'arr_{ d["id"] }']

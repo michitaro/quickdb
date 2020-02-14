@@ -1,3 +1,4 @@
+import io
 import unittest
 import numpy
 from . import jsonnpy
@@ -11,7 +12,7 @@ samples = [
         },
     },
     {
-        'dict': {'array': [1,2,3], 'str': 'str'},
+        'dict': {'array': [1, 2, 3], 'str': 'str'},
     },
 ]
 
@@ -23,3 +24,16 @@ class TestJsonNpy(unittest.TestCase):
                 repr(jsonnpy.loads(jsonnpy.dumps(s))),
                 repr(s),
             )
+
+    def test_sequential_data(self):
+        wstream = io.BytesIO()
+        for s in samples:
+            jsonnpy.dump(s, wstream)
+        rstream = io.BytesIO(wstream.getvalue())
+        result = []
+        for s in samples:
+            result.append(jsonnpy.load(rstream))
+        self.assertEqual(
+            repr(samples),
+            repr(result),
+        )
