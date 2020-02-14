@@ -74,6 +74,9 @@ def empty(shape: Iterable[int], dtype: Union[_dtype, str] = None) -> ndarray: ..
 def load(filename: str) -> ndarray: ...
 
 
+def savez(*args, **kwargs): ...
+
+
 def allclose(a: ndarray, b: ndarray, equal_nan: bool = None) -> bool: ...
 
 
@@ -129,6 +132,9 @@ def nanmax(*args, **kwargs): ...
 
 
 def log10(*args, **kwargs) -> ndarray: ...
+
+
+def log(*args, **kwargs) -> ndarray: ...
 
 
 @overload
