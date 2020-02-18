@@ -1,3 +1,4 @@
+from quickdb.sql2mapreduce.agg_functions.sum import SumAggCall
 from quickdb.sql2mapreduce.agg_functions.crossmatch import CrossMatchAggCall
 from typing import Dict, Tuple, Type
 
@@ -11,6 +12,7 @@ from .minmax import MaxAggCall, MinAggCall, MinMaxAggCall
 
 agg_functions: Dict[Tuple[str, ...], Type[AggCall]] = {
     ('count', ): CountAggCall,
+    ('sum', ): SumAggCall,
     ('min', ): MinAggCall,
     ('max', ): MaxAggCall,
     ('minmax', ): MinMaxAggCall,
