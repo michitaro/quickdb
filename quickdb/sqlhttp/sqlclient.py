@@ -119,7 +119,7 @@ def post_sql_streaming_with_tqdm(sql: str, shared: Dict = None, ncols: int = Non
     with _progress_bar(ncols) as progress:
         for pd in post_sql_streaming(sql, shared):
             progress(pd.progress)
-            yield pd.target_list
+            yield pd
 
 
 @contextmanager
