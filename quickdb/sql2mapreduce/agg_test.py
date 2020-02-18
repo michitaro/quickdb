@@ -1,6 +1,7 @@
 from functools import lru_cache
+from quickdb.datarake.interface import Progress, ProgressCB
 from quickdb.datarake.safeevent import SafeEvent
-from typing import Dict
+from typing import Any, Dict
 import unittest
 
 import numpy
@@ -118,12 +119,17 @@ def patches(rerun_name: str):
     return Rerun(f'{REPO_DIR}/{rerun_name}').patches[:10]
 
 
-def run_make_env(make_env: str, shared: Dict, progress=None, interrupt_notifiyer: SafeEvent = None):
+def run_make_env(make_env: str, shared: Dict, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None) -> Any:
     from quickdb.utils import evaluate
     from functools import reduce
-    shared = through_serialization(shared)
+    shared = through_serialization(shared or {})
     env = evaluate(make_env, shared)
-    return env['finalizer'](reduce(env['reducer'], map(env['mapper'], patches(env['rerun']))))
+    ps = patches(env['rerun'])
+    if env.get('streaming'):
+        for i, mv in enumerate(map(env['mapper'], ps)):
+            progress and progress(Progress(done=i + 1, total=len(ps), data=mv))
+    else:
+        return env['finalizer'](reduce(env['reducer'], map(env['mapper'], ps)))
 
 
 def through_serialization(a):

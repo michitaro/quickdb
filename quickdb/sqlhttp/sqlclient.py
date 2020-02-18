@@ -1,3 +1,4 @@
+import contextlib
 import http.client
 import signal
 import time
@@ -48,7 +49,7 @@ def _wait_job(job_id: str, progress: ProgressCB, polling_interval: float):
         finally:
             conn.close()
         return res
-    
+
     with trap_keyboard_interrupt(lambda *args: kick('DELETE')):
         last_total = 1
         while True:
@@ -66,21 +67,59 @@ def _wait_job(job_id: str, progress: ProgressCB, polling_interval: float):
             time.sleep(polling_interval)
 
 
-def post_sql_with_tqdm(sql: str, shared: Dict = None, polling_interval=0.1, ncols=None):
-    import contextlib
+@contextlib.contextmanager
+def _progress_bar(ncols=None):
     from tqdm import tqdm
+    with tqdm(total=1, ncols=None) as pbar:
+        def progress(p: Progress):
+            pbar.total = p.total
+            pbar.n = p.done
+            pbar.refresh()
+        yield progress
 
-    @contextlib.contextmanager
-    def progress_bar():
-        with tqdm(total=1, ncols=ncols) as pbar:
-            def progress(p):
-                pbar.total = p.total
-                pbar.n = p.done
-                pbar.refresh()
-            yield progress
 
-    with progress_bar() as progress:
+def post_sql_with_tqdm(sql: str, shared: Dict = None, polling_interval=0.1, ncols: int = None):
+    with _progress_bar(ncols) as progress:
         return post_sql(sql, shared, progress, polling_interval)
+
+
+class PartialData(NamedTuple):
+    progress: Progress
+    target_list: List
+
+
+def post_sql_streaming(sql, shared: Dict = None):
+    conn = http.client.HTTPConnection(config.server_addr)
+    try:
+        conn.request("POST", '/jobs',
+                     body=jsonnpy.dumps({'sql': sql, 'shared': shared or {}, 'streaming': True}),
+                     headers={"Content-type": "application/hscssp-jsonnpy", "Accept": "application/hscssp-jsonnpy"})
+        response = conn.getresponse()
+        if response.status != 200:
+            raise RuntimeError(f'HTTP Error: {response.reason}')
+        while True:
+            msg = jsonnpy.load(response)
+            msg_type = msg['type']
+            if msg_type == 'progress':
+                p = msg['progress']
+                yield PartialData(
+                    progress=Progress(done=p['done'], total=p['total']),
+                    target_list=p['data'][0],
+                )
+            elif msg_type == 'error':
+                raise RuntimeError(msg['reason'])
+            else:
+                assert msg_type == 'end', f'Unknown message type: {msg}'
+                break
+    finally:
+        conn.close()
+
+
+def post_sql_streaming_with_tqdm(sql: str, shared: Dict = None, ncols: int = None):
+    with _progress_bar(ncols) as progress:
+        for pd in post_sql_streaming(sql, shared):
+            progress(pd.progress)
+            yield pd.target_list
 
 
 @contextmanager

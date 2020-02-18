@@ -1,23 +1,25 @@
-from quickdb.datarake.safeevent import SafeEvent
-from quickdb.sql2mapreduce.sqlast.sqlast import SqlError
+import os
+import queue
 import secrets
-import traceback
 import threading
-from typing import Dict
+import traceback
+from typing import Dict, NamedTuple
 
-from flask import Flask, abort, request, make_response
+from flask import Flask, Response, abort, make_response, request
 
-from quickdb.datarake.interface import Progress
 from quickdb.datarake import master
-from quickdb.sql2mapreduce import run_sql
-from quickdb.sql2mapreduce import agg_test
+from quickdb.datarake.interface import Progress, ProgressCB
+from quickdb.datarake.safeevent import SafeEvent
+from quickdb.sql2mapreduce import agg_test, run_sql
+from quickdb.sql2mapreduce.sqlast.sqlast import SqlError
 from quickdb.sspcatalog.errors import UserError
 
 from . import jsonnpy
 
 app = Flask(__name__)
 
-run_make_env = app.config['TESTING'] and agg_test.run_make_env or master.run_make_env
+run_make_env = agg_test.run_make_env if os.environ.get('TEST') else master.run_make_env
+
 
 jobs: Dict[str, 'Job'] = {}
 
@@ -27,12 +29,52 @@ def create_job():
     if request.content_type != 'application/hscssp-jsonnpy':
         abort(400)
     req = jsonnpy.loads(request.data)
+    if req.get('streaming'):
+        return streaming_response(req)
     job = Job(req['sql'], req.get('shared', {}))
     if req.get('deferred'):
         return jsonnpy_response({'job_id': job.id})
     else:
         job.wait()
         return jsonnpy_response(resonse_for(job))
+
+
+def streaming_response(req: Dict):
+    def g():
+        with SafeEvent() as interrupt:
+            q = queue.Queue()
+
+            def on_progress(p: Progress):
+                q.put(p)
+
+            def job_thread():
+                try:
+                    run_sql(req['sql'], run_make_env, req.get('shared', {}), progress=on_progress, interrupt_notifiyer=interrupt, streaming=True)
+                except (UserError, SqlError) as error:
+                    q.put(RuntimeError(str(error)))
+                except Exception as error:
+                    q.put(RuntimeError(traceback.format_exc()))
+                finally:
+                    q.put(None)
+
+            th = threading.Thread(target=job_thread)
+            th.start()
+            try:
+                while True:
+                    msg = q.get()
+                    if msg is None:
+                        yield jsonnpy.dumps({'type': 'end'})
+                        break
+                    elif isinstance(msg, Progress):
+                        yield jsonnpy.dumps({'type': 'progress', 'progress': msg._asdict()})
+                    else:
+                        assert isinstance(msg, Exception), f'Unknwon message type: {repr(msg)}'
+                        yield jsonnpy.dumps({'type': 'error', 'reason': str(msg)})
+            except GeneratorExit:
+                interrupt.set()
+            th.join()
+
+    return Response(g(), mimetype='application/hscssp-jsonnpy')
 
 
 @app.route('/jobs/<job_id>')
@@ -47,7 +89,6 @@ def show_job(job_id: str):
 @app.route('/jobs/<job_id>', methods=['DELETE'])
 def stop_job(job_id: str):
     job = jobs.get(job_id)
-    print(job)
     if job and job.interrupt:
         job.interrupt.set()
         return jsonnpy_response({})
@@ -80,7 +121,7 @@ def resonse_for(job: 'Job'):
 
 
 class Job:
-    def __init__(self, sql: str, shared: Dict):
+    def __init__(self, sql: str, shared: Dict, on_progress: ProgressCB = None):
         self.id = secrets.token_hex(16)
         self._sql = sql
         self._shared = shared
@@ -89,13 +130,15 @@ class Job:
         self.result = None
         self.error = None
         self.interrupt = None
-        jobs[self.id] = self
+        self._on_progress = on_progress
         th = threading.Thread(target=self._run, args=(self,))
         th.start()
         self._th = th
+        jobs[self.id] = self
 
     def _update_progress(self, p: Progress):
         self.progress = p
+        self._on_progress and self._on_progress(p)
 
     def _run(self, job):
         try:
@@ -108,11 +151,11 @@ class Job:
             self.error = traceback.format_exc()
         finally:
             self._event.set()
-        threading.Timer(30., self._delete)
+            threading.Timer(30., self._delete).start()
 
     def _delete(self):
         jobs.pop(self.id, None)
 
-    def wait(self, timeout=30):
-        self._event.wait(timeout)
+    def wait(self):
+        self._event.wait()
         self._delete()

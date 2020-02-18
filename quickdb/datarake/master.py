@@ -1,15 +1,13 @@
 import concurrent.futures
-from contextlib import contextmanager
 import pickle
-from quickdb.datarake.safeevent import SafeEvent, wait_for_safe_event
 import socket
-import threading
 from functools import reduce
 from itertools import repeat
-from typing import Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from quickdb.datarake.auth import knock
 from quickdb.datarake.interface import Progress, ProgressCB
+from quickdb.datarake.safeevent import SafeEvent, wait_for_safe_event
 from quickdb.sspcatalog.errors import UserError
 from quickdb.utils.evaluate import evaluate
 
@@ -18,8 +16,10 @@ from . import api, config
 
 def run_make_env_with_interrupt(make_env: str, *, interrupt_notifiyer: SafeEvent, shared: Optional[Dict], progress: Optional[ProgressCB]):
     shared = {} if shared is None else shared
-    mapped_values = scatter(make_env, shared, progress, interrupt_notifiyer)
     env = evaluate(make_env, dict(shared))  # we need to pass a copy of `shared` because `evaluate` makes some changes on `shared`
+    mapped_values = scatter(make_env, shared, progress, interrupt_notifiyer)
+    if env.get('streaming'):
+        return None
     finalizer = env.get('finalizer')
     result = reduce(env['reducer'], (mv.value for mv in mapped_values))
     if finalizer:
@@ -27,7 +27,7 @@ def run_make_env_with_interrupt(make_env: str, *, interrupt_notifiyer: SafeEvent
     return result
 
 
-def run_make_env(make_env: str, shared: Dict = None, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None):
+def run_make_env(make_env: str, shared: Dict, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None) -> Any:
     with SafeEvent() as noop:
         return run_make_env_with_interrupt(make_env, interrupt_notifiyer=interrupt_notifiyer or noop, shared=shared, progress=progress)
 
@@ -38,7 +38,7 @@ def scatter(make_env: str, shared: Dict, progress: Optional[ProgressCB], interru
     def progress1(worker: config.Worker, p: Progress):
         progresses[worker] = p
         if progress:
-            progress(reduce(lambda a, b: Progress(done=a.done + b.done, total=a.total + b.total), progresses.values()))
+            progress(reduce(lambda a, b: Progress(done=a.done + b.done, total=a.total + b.total, data=p.data), progresses.values()))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(config.workers)) as pool:
         return pool.map(unpack_args(post_request), zip(
@@ -91,7 +91,7 @@ def test():
     '''
     with SafeEvent() as interrupt_notifyer:
         try:
-            result = run_make_env(make_env, interrupt_notifiyer=interrupt_notifyer)
+            result = run_make_env(make_env, {}, interrupt_notifiyer=interrupt_notifyer)
             print(result)
         except KeyboardInterrupt:
             interrupt_notifyer.set()

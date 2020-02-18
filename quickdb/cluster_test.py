@@ -29,7 +29,7 @@ class TestCluster(unittest.TestCase):
         '''
 
         with timeit('direct'):
-            result = master.run_make_env(make_env)
+            result = master.run_make_env(make_env, {})
         print(result)
 
     def test_agg_query(self):

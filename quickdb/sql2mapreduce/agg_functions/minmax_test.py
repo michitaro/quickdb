@@ -7,7 +7,6 @@ import unittest
 
 @unittest.skipUnless(REPO_DIR, 'REPO_DIR is not set')
 class TestMinMaxAggCall(unittest.TestCase):
-    @unittest.skip('')
     def test_minmax_integer(self):
         sql = '''
         SELECT min(object_id), max(object_id) FROM pdr2_dud

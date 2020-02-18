@@ -15,7 +15,10 @@ class NonAggQueryResult(NamedTuple):
     target_names: List[str]
 
 
-def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None, progress: ProgressCB = None, interrupt_notifiyer: SafeEvent = None) -> NonAggQueryResult:
+def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = None,
+                     progress: ProgressCB = None,
+                     interrupt_notifiyer: SafeEvent = None,
+                     streaming=False) -> NonAggQueryResult:
     '''
     Args:
         select (Select): Select object to be run.
@@ -24,12 +27,12 @@ def run_nonagg_query(select: Select, run_make_env: RunMakeEnv, shared: Dict = No
     Returns:
         FinalizerResult
     '''
-    check_select(select)
+    check_select(select, streaming=True)
     make_env = '''
         from quickdb.sql2mapreduce.nonagg import nonagg_env
         rerun, mapper, reducer, finalizer = nonagg_env(select, shared)
     '''
-    env_context = {'select': select, 'shared': shared}
+    env_context = {'select': select, 'shared': shared, 'streaming': streaming}
     target_list = run_make_env(make_env, env_context, progress, interrupt_notifiyer)
 
     return NonAggQueryResult(
@@ -87,8 +90,8 @@ class MapperResult(NamedTuple):
     sort_values: Optional[List[numpy.ndarray]]
 
 
-def check_select(select: Select):
-    if select.limit_count is None:
+def check_select(select: Select, streaming: bool):
+    if not streaming and select.limit_count is None:
         raise SqlError('LIMIT must be specified')  # pragma: no cover
     if select.limit_offset is not None:
         raise SqlError('OFFSET is not supported')  # pragma: no cover

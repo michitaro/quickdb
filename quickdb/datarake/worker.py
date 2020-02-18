@@ -108,6 +108,7 @@ class Job:
         shared = self._request.shared
         env = evaluate(make_env, dict(shared))  # pass a copy of `shared` because `evaluate` affects passed `shared` object.
         reducer = env['reducer']
+        streaming = env.get('streaming', False)
         tasks = config.tasks(env)
         pool = get_pool()
         chunksize = env.get('chunksize') or min(len(tasks) // multiprocessing.cpu_count() + 1, 1024)
@@ -116,9 +117,11 @@ class Job:
         for i, value in enumerate(pool.imap_unordered(Job._process_partial_tasks, items)):
             if self._interrupted:
                 raise UserError('Cancelled')
-            result = value if i == 0 else reducer(result, value)
-            if progress:
-                progress(Progress(done=i + 1, total=len(items)))
+            if streaming:
+                progress and progress(Progress(done=i+1, total=len(items), data=value))
+            else:
+                result = value if i == 0 else reducer(result, value)
+                progress and progress(Progress(done=i + 1, total=len(items)))
         return result
 
     def interrupt(self):
